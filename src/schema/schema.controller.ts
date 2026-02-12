@@ -1,16 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { SchemaService } from './schema.service';
-import { CreateSchemaDto } from './dto/create-schema.dto';
 import { UpdateSchemaDto } from './dto/update-schema.dto';
 import express from 'express';
-
+import { extname } from 'path/win32';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { CreateSchemaDto } from './dto/create-schema.dto';
 @Controller('schema')
 export class SchemaController {
   constructor(private readonly schemaService: SchemaService) {}
 
   @Post()
-  async create(@Body() createSchemaDto: CreateSchemaDto, @Res() response: express.Response){
+  @UseInterceptors(FileInterceptor("imageUrl", {
+      storage:diskStorage({
+        destination: './stockage',
+        filename: (req, file, cb) => {
+          cb(null , `${new Date().getTime()}${extname(file.originalname)}`)}
+      })
+    }))
+
+  async create(@Body() createSchemaDto: CreateSchemaDto, @Res() response , @UploadedFile() imageUrl) {
     try {
+
+  if (imageUrl) {
+    createSchemaDto.imageUrl = imageUrl.filename;
+  }
+
       const newSchema = await this.schemaService.create(createSchemaDto);
       return response.status(HttpStatus.CREATED).json({
         message : "schema created successfully",
