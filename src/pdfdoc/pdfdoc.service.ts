@@ -46,4 +46,5 @@ export class PdfdocService {
     const pdfdoc = await this.findOne(id);
     return this.pdfdocRespository.remove(pdfdoc);
   }
+
 }

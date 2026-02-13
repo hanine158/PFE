@@ -19,6 +19,8 @@ export class SchemaController {
       })
     }))
 
+  
+
   async create(@Body() createSchemaDto: CreateSchemaDto, @Res() response , @UploadedFile() imageUrl) {
     try {
 
@@ -77,8 +79,19 @@ export class SchemaController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateSchemaDto: UpdateSchemaDto, @Res() response: express.Response) {
+   @UseInterceptors(FileInterceptor("imageUrl", {
+      storage:diskStorage({
+        destination: './stockage',
+        filename: (req, file, cb) => {
+          cb(null , `${new Date().getTime()}${extname(file.originalname)}`)}
+      })
+    }))
+  async update(@Param('id') id: string, @Body() updateSchemaDto: UpdateSchemaDto, @Res() response: express.Response, @UploadedFile() imageUrl) {
     try {
+      const newimageUrl = imageUrl  ? imageUrl.filename : null;
+      if (newimageUrl){
+        updateSchemaDto.imageUrl = newimageUrl;
+      }
       const updatedSchema = await this.schemaService.update(+id, updateSchemaDto);
       return response.status(HttpStatus.OK).json({
         message: "schema updated successfully",

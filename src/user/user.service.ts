@@ -49,4 +49,12 @@ async findAll() : Promise <User[]>{
     const user = await this.findOne(id);
     return await this.userRepository.remove(user);
   }
+
+  async login(email: string, password: string): Promise<User> {
+    const user = await this.userRepository.findOneBy({ email, password});
+    if (!user) {
+      throw new NotFoundException('invalid email or password');
+    }
+    return user;
+  }
 }

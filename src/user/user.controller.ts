@@ -94,5 +94,21 @@ export class UserController {
         message: "Erreur lors de la suppression de l'utilisateur : " + error.message,
       });
     }
+
+  }
+  @Post('login')
+  async login(@Body() loginDto: any, @Res() response: express.Response) {
+    try {
+      const user = await this.userService.login(loginDto.email, loginDto.password);
+      return response.status(HttpStatus.OK).json({
+        message: "Connexion réussie",
+        data: user,
+      });
+    } catch (error) {
+      return response.status(HttpStatus.UNAUTHORIZED).json({
+        statusCode: 401,
+        message: "Erreur de connexion : " + error.message,
+      });
+    }
   }
 }
