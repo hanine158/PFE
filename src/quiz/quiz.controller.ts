@@ -38,9 +38,9 @@ export class QuizController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: Number, @Res() response) {
+  async findOne(@Param('id') id: string, @Res() response) {
     try {
-      const quiz = await this.quizService.findOne(+id);
+      const quiz = await this.quizService.findOne(id);
       return response.status(HttpStatus.OK).json({
         message: "quiz retrieved successfully",
         quiz
@@ -53,9 +53,9 @@ export class QuizController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: number, @Body() updateQuizDto: UpdateQuizDto, @Res() response) {
+  async update(@Param('id') id: string, @Body() updateQuizDto: UpdateQuizDto, @Res() response) {
     try {
-      const updatedQuiz = await this.quizService.update(+id, updateQuizDto);
+      const updatedQuiz = await this.quizService.update(id, updateQuizDto);
       return response.status(HttpStatus.OK).json({
         message: "quiz updated successfully",
         quiz: updatedQuiz
@@ -70,7 +70,7 @@ export class QuizController {
   @Delete(':id')
   async remove(@Param('id') id: string, @Res() response) {
     try {
-      const removedQuiz = await this.quizService.remove(+id);
+      const removedQuiz = await this.quizService.remove(id);
       return response.status(HttpStatus.OK).json({
         message: "quiz removed successfully",
         quiz: removedQuiz

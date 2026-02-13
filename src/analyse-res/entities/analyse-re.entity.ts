@@ -14,4 +14,8 @@ export class AnalyseRe {
     @Column({type:"simple-array"})
     quiz:Quiz[];
 
+    @Column({type:"simple-array"})
+    questions:string[];
+
+
 }

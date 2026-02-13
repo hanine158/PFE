@@ -49,9 +49,9 @@ export class UserController {
     
   }
   @Get(':id')
-  async findOne(@Param('id') id: number, @Res() response: express.Response) {
+  async findOne(@Param('id') id: string, @Res() response: express.Response) {
     try {
-      const user = await this.userService.findOne(+id);
+      const user = await this.userService.findOne(id);
       return response.status(HttpStatus.OK).json({
         message: "Utilisateur trouvé",
         data: user,
@@ -67,7 +67,7 @@ export class UserController {
   @Patch(':id')
  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Res() response: express.Response): Promise<express.Response> {
     try {
-      const updatedUser = await this.userService.update(+id, updateUserDto);
+      const updatedUser = await this.userService.update(id, updateUserDto);
       return response.status(HttpStatus.OK).json({
         message: "Utilisateur mis à jour avec succès",
         data: updatedUser,
@@ -83,7 +83,7 @@ export class UserController {
   @Delete(':id')
   async remove(@Param('id') id: string, @Res() response: express.Response) {
     try {
-      const deletedUser = await this.userService.remove(+id);
+      const deletedUser = await this.userService.remove(id);
       return response.status(HttpStatus.OK).json({
         message: "Utilisateur supprimé avec succès",
         data: deletedUser,
@@ -105,10 +105,27 @@ export class UserController {
         data: user,
       });
     } catch (error) {
-      return response.status(HttpStatus.UNAUTHORIZED).json({
-        statusCode: 401,
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: 404,
         message: "Erreur de connexion : " + error.message,
       });
     }
+  }
+  @Post('register')
+  async register(@Body() registerDto: CreateUserDto, @Res() response: express.Response) {
+    try {
+      const user = await this.userService.create(registerDto);
+      return response.status(HttpStatus.CREATED).json({
+        message: "Inscription réussie",
+        data: user,
+      });
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: "Erreur lors de l'inscription : " + error.message,
+      });
+    }
+
+
   }
 }

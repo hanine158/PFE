@@ -18,7 +18,7 @@ export class QuestionService {
     return questions;
   }
 
-   async findOne(id: number)  : Promise<Question>{
+   async findOne(id: string)  : Promise<Question>{
     const question = await this.questionRepository.findOneBy({id});
     if(!question){
       throw new NotFoundError("question not found");
@@ -26,7 +26,7 @@ export class QuestionService {
     return question;
   }
 
-  async update(id: number, updateQuestionDto: UpdateQuestionDto) : Promise<Question> {
+  async update(id: string, updateQuestionDto: UpdateQuestionDto) : Promise<Question> {
     const question = await this.findOne(id);
    if(!question){
 
@@ -36,7 +36,7 @@ export class QuestionService {
     return this.questionRepository.save(question);
   }
 
-  async remove(id: number) : Promise<Question> {
+  async remove(id: string) : Promise<Question> {
     const question = await this.findOne(id);
     if(!question){
       throw new NotFoundError("question not found");

@@ -6,7 +6,7 @@ import*  as argon2 from 'argon2';
 
 export class User {
     @PrimaryGeneratedColumn()
-    id:number
+    id:string
     @Column()
     name:string
     @Column()

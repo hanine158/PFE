@@ -44,7 +44,7 @@ export class QuestionController {
   @Get(':id')
    async findOne(@Param('id') id: string, @Res() response) {
     try{
-      const question = await this.questionService.findOne(+id);
+      const question = await this.questionService.findOne(id);
       return response.status(HttpStatus.OK).json({
         message : "question retrieved successfully",
         question : question
@@ -60,7 +60,7 @@ export class QuestionController {
   @Patch(':id')
    async update(@Param('id') id: string, @Body() updateQuestionDto: UpdateQuestionDto, @Res() response) {
     try{
-      const updatedQuestion = await this.questionService.update(+id, updateQuestionDto);
+      const updatedQuestion = await this.questionService.update(id, updateQuestionDto);
       return response.status(HttpStatus.OK).json({
         message : "question updated successfully",
         question : updatedQuestion
@@ -76,7 +76,7 @@ export class QuestionController {
   @Delete(':id')
  async remove(@Param('id') id: string, @Res() response) {
     try{
-      const deletedQuestion = await this.questionService.remove(+id);
+      const deletedQuestion = await this.questionService.remove(id);
       return response.status(HttpStatus.OK).json({
         message : "question deleted successfully",
         question : deletedQuestion

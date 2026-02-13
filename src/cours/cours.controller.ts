@@ -80,7 +80,7 @@ export class CoursController {
   @Delete(':id')
   async remove(@Param('id') id: string, @Res() response) {
     try {
-      const cour = await this.coursService.remove(+id);
+      const cour = await this.coursService.remove(id);
       return response.status(HttpStatus.OK).json({
         message: "Cour data removed successfully",
         cour

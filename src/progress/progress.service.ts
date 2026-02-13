@@ -30,19 +30,24 @@ return progress;
     if(!progress){
       throw new NotFoundException("progress data not found")
     }
+    
     return progress;
   }
 
- async update( updateProgressDto: UpdateProgressDto) : Promise<Progress> {
-    const progress = await this.progressRespository.preload({
-      ...updateProgressDto,
-    })
-    if(!progress){
-      throw new NotFoundException("progress data not found")
-    }
-    return this.progressRespository.save(progress);
-   
+ async update(id: string, updateProgressDto: UpdateProgressDto) {
+  const progress = await this.progressRepository.findOne({
+    where: { id },
+  });
+
+  if (!progress) {
+    throw new Error('Progress not found');
   }
+
+  Object.assign(progress, updateProgressDto);
+
+  return await this.progressRepository.save(progress);
+}
+
 
   async remove() : Promise<Progress> {
     const progress = await this.findOne();

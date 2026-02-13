@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 @Entity("progress")
 export class Progress {
   @PrimaryGeneratedColumn()
-  id: number;
+  idutilisateur: string;
    @Column()
     quizComplete: number; 
 

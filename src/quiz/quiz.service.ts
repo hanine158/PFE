@@ -21,7 +21,7 @@ export class QuizService {
    return quizzes;
   }
 
-  async findOne(id: number)  : Promise<Quiz>{
+  async findOne(id: string)  : Promise<Quiz>{
     const quiz = await this.quizRepository.findOneBy({id});
    if(!quiz){
    throw new NotFoundException('quiz not found');
@@ -29,7 +29,7 @@ export class QuizService {
     return quiz;
   }
 
-  async update(id: number, updateQuizDto: UpdateQuizDto) : Promise<Quiz> {
+  async update(id: string, updateQuizDto: UpdateQuizDto) : Promise<Quiz> {
       const quiz = await this.quizRepository.findOneBy({id});
       if(!quiz){
         throw new NotFoundException("quiz not found");
@@ -39,7 +39,7 @@ export class QuizService {
 
   }
 
-  async remove(id: number) : Promise<Quiz>  {
+  async remove(id: string) : Promise<Quiz>  {
     const quiz = await this.quizRepository.findOneBy({id});
     if(!quiz){
       throw new NotFoundException("quiz not found");

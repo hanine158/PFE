@@ -43,7 +43,7 @@ export class BadgeController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number, @Res() response) {
+  async findOne(@Param('id') id: string, @Res() response) {
     try {
       const badge = await this.badgeService.findOne(id);
       return response.status(HttpStatus.OK).json({
@@ -59,7 +59,7 @@ export class BadgeController {
   }
 
   @Patch(':id')
-   async update(@Param('id') id: number, @Body() updateBadgeDto: UpdateBadgeDto, @Res() response) {
+   async update(@Param('id') id: string, @Body() updateBadgeDto: UpdateBadgeDto, @Res() response) {
     try {
       const updatedBadge = await this.badgeService.update(id, updateBadgeDto);
       return response.status(HttpStatus.OK).json({
@@ -75,7 +75,7 @@ export class BadgeController {
   }
 
   @Delete(':id')
-   async remove(@Param('id') id: number, @Res() response) {
+   async remove(@Param('id') id: string, @Res() response) {
     try {
       await this.badgeService.remove(id);
       return response.status(HttpStatus.OK).json({

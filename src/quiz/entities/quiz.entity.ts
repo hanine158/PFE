@@ -5,7 +5,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 export class Quiz {
 
     @PrimaryGeneratedColumn()
-    id:number;
+    id:string;
 
     @Column()
     titre:string;

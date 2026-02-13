@@ -4,7 +4,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 export class Question {
 
     @PrimaryGeneratedColumn()
-    id:number;
+    id:string;
 
     @Column()
     texte:string;

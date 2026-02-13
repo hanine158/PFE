@@ -24,7 +24,7 @@ export class BadgeService {
     return newbadge;
   }
 
-  async findOne(id: number) : Promise<Badge> {
+  async findOne(id: string) : Promise<Badge> {
     const badge = await this.badgeRepository.findOneBy({id});
     if (!badge) {
       throw new NotFoundError(`Badge with ID ${id} not found`);
@@ -32,7 +32,7 @@ export class BadgeService {
     return badge;
   }
 
- async update(id: number, updateBadgeDto: UpdateBadgeDto) : Promise<Badge> {
+ async update(id: string, updateBadgeDto: UpdateBadgeDto) : Promise<Badge> {
     const badge = await this.badgeRepository.preload({
       id,
       ...updateBadgeDto,
@@ -43,7 +43,7 @@ export class BadgeService {
     return await this.badgeRepository.save(badge);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     const badge = await this.findOne(id);
     return await this.badgeRepository.remove(badge);
   }

@@ -40,8 +40,8 @@ export class CoursService {
     return this.courRepository.save(cour);
   }
 
-  async remove(id: number) : Promise<Cour> {
-    const cour = await this.findOne(id.toString());
+  async remove(id: string) : Promise<Cour> {
+    const cour = await this.findOne(id);
     return this.courRepository.remove(cour);
   }
 }
