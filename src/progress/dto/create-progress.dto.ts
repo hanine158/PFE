@@ -15,5 +15,10 @@ export class CreateProgressDto {
     @IsNotEmpty()
     @IsNumber()
     tempsEtude: number;
+   
+
+      @IsNumber()
+    user:number;
+
 
 }

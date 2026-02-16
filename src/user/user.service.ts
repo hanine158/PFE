@@ -26,7 +26,7 @@ async findAll() : Promise <User[]>{
     return user
   }
 
-  async findOne(id: string): Promise <User> {
+  async findOne(id: number): Promise <User> {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -34,7 +34,7 @@ async findAll() : Promise <User[]>{
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise <User> {
+  async update(id: number, updateUserDto: UpdateUserDto): Promise <User> {
     const user = await this.userRepository.preload({
       id,
       ...updateUserDto,
@@ -45,7 +45,7 @@ async findAll() : Promise <User[]>{
     return await this.userRepository.save(user);
   }
 
-  async remove(id: string): Promise <User> {
+  async remove(id: number): Promise <User> {
     const user = await this.findOne(id);
     return await this.userRepository.remove(user);
   }

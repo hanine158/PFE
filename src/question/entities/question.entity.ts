@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { AnalyseRe } from "src/analyse-res/entities/analyse-re.entity";
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("question")
 export class Question {
@@ -17,4 +18,21 @@ export class Question {
 
     @Column()
     reponse:string;
+    
+
+    
+  @ManyToMany(() => AnalyseRe, (analyse) => analyse.question)
+  @JoinTable({
+    name: 'analyse_question',
+    joinColumn: {
+      name: 'question_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'analyseRe_id',
+      referencedColumnName: 'id',
+    },
+  })
+  analyseRe: AnalyseRe[];
+    
 }

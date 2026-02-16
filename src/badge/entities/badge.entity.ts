@@ -1,9 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "src/user/entities/user.entity";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
  @Entity("badge")
 export class Badge {
     @PrimaryGeneratedColumn()
-    id:string;
+    id:number;
 
     @Column()
     nom:string;
@@ -13,6 +14,12 @@ export class Badge {
 
     @Column()
     description:string;
+
+    @ManyToOne(() => User, (user) => user.badges,{
+        onDelete:"CASCADE"
+    })
+    @JoinColumn()
+    user: User;
 
 
 

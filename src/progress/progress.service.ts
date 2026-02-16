@@ -5,14 +5,20 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Progress } from './entities/progress.entity';
 import { NOTFOUND } from 'dns';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class ProgressService {
   constructor(
     @InjectRepository(Progress) private progressRespository: Repository<Progress>,
+    @InjectRepository(User) private userRepository: Repository<User>,
   ){}
  async create(createProgressDto: CreateProgressDto) : Promise<Progress> {
-    const progress = this.progressRespository.create(createProgressDto);
+  const user = await this.userRepository.findOne({where:{id:createProgressDto.user} , relations:["progress"]});
+    if(!user){
+      throw new NotFoundException("user not found")
+    }
+    const progress = this.progressRespository.create({...createProgressDto, user});
     return this.progressRespository.save(progress);
   }
 
@@ -34,22 +40,18 @@ return progress;
     return progress;
   }
 
- async update(id: string, updateProgressDto: UpdateProgressDto) {
-  const progress = await this.progressRepository.findOne({
-    where: { id },
-  });
-
-  if (!progress) {
-    throw new Error('Progress not found');
+ async update(id: number, updateProgressDto: UpdateProgressDto) : Promise<Progress> {
+   const progress = await this.findOne();
+    if(!progress){
+      throw new NotFoundException("progress data not found")
+    }
+    Object.assign(progress, updateProgressDto);
+    return this.progressRespository.save(progress);
+     
+   
   }
 
-  Object.assign(progress, updateProgressDto);
-
-  return await this.progressRepository.save(progress);
-}
-
-
-  async remove() : Promise<Progress> {
+  async remove(id: number) : Promise<Progress> {
     const progress = await this.findOne();
     return this.progressRespository.remove(progress);
   }

@@ -39,7 +39,7 @@ export class ProgressController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Res() response) {
+  async findOne(@Param('id') id: number, @Res() response) {
     try {
       const progress= await this.progressService.findOne();
       return response.status(HttpStatus.OK).json({
@@ -62,7 +62,7 @@ export class ProgressController {
   async update(@Param('id') id: number, @Body() updateProgressDto: UpdateProgressDto, @Res() response) : Promise<Progress> {
 
      try {
-      const updatedProgress = await this.progressService.update( updateProgressDto);
+      const updatedProgress = await this.progressService.update( id, updateProgressDto);
       return response.status(HttpStatus.OK).json({
         message :"progress updated successfully",
         data: updatedProgress
@@ -75,9 +75,9 @@ export class ProgressController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Res() response) {
+  async remove(@Param('id') id: number, @Res() response) {
     try {
-      const deletedProgress = await this.progressService.remove();
+      const deletedProgress = await this.progressService.remove(id);
       return response.status(HttpStatus.OK).json({
         message :"progress deleted successfully",
         data: deletedProgress

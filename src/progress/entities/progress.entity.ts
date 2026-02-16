@@ -1,9 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "src/user/entities/user.entity";
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("progress")
 export class Progress {
   @PrimaryGeneratedColumn()
-  idutilisateur: string;
+  id: number;
    @Column()
     quizComplete: number; 
 
@@ -16,5 +17,11 @@ export class Progress {
 
 
 
+    @OneToOne(() => User, (user) => user.progress)
+    user: User;
+    }
 
-}
+
+
+
+

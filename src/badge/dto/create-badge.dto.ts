@@ -14,4 +14,7 @@ export class CreateBadgeDto {
     @IsString()
     @IsNotEmpty()
     description:string;
+
+    @IsNumber()
+    user:number;
 }

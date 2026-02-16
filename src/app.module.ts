@@ -19,7 +19,7 @@ import { AnalyseResModule } from './analyse-res/analyse-res.module';
     port: 5432,
     username: 'postgres',
     password:'hanine',
-    database: 'base1',
+    database: 'db1',
     entities:[__dirname +'/**/*.entity{.ts,.js}'],
     synchronize:true,
 

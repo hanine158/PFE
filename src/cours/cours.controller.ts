@@ -44,7 +44,7 @@ export class CoursController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Res() response) {
+  async findOne(@Param('id') id: number, @Res() response) {
     try {
       const cour = await this.coursService.findOne(id);
       return response.status(HttpStatus.OK).json({
@@ -61,7 +61,7 @@ export class CoursController {
   }
 
   @Patch(':id')
- async update(@Param('id') id: string, @Body() updateCourDto: UpdateCourDto, @Res() response) {
+ async update(@Param('id') id: number, @Body() updateCourDto: UpdateCourDto, @Res() response) {
     try {
       const cour = await this.coursService.update(id, updateCourDto);
       return response.status(HttpStatus.OK).json({
@@ -78,7 +78,7 @@ export class CoursController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Res() response) {
+  async remove(@Param('id') id: number, @Res() response) {
     try {
       const cour = await this.coursService.remove(id);
       return response.status(HttpStatus.OK).json({

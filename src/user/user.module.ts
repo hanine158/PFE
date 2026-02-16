@@ -8,7 +8,10 @@ import { Cour } from 'src/cours/entities/cour.entity';
 import { Progress } from 'src/progress/entities/progress.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])],
+  imports: [TypeOrmModule.forFeature([User
+    ,Badge,Cour,Progress
+  ])
+],
   controllers: [UserController],
   providers: [UserService],
 })

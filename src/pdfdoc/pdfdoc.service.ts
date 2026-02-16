@@ -23,7 +23,7 @@ export class PdfdocService {
     return pdfdocs;
   }
 
-  async findOne(id: string) : Promise<Pdfdoc> {
+  async findOne(id: number) : Promise<Pdfdoc> {
     const pdfdoc = await this.pdfdocRespository.findOneBy({id});
     if(!pdfdoc){
       throw new NotFoundException("pdfdoc data not found")
@@ -31,7 +31,7 @@ export class PdfdocService {
     return pdfdoc;
   }
 
- async update(id: string, updatePdfdocDto: UpdatePdfdocDto) : Promise<Pdfdoc> {
+ async update(id: number, updatePdfdocDto: UpdatePdfdocDto) : Promise<Pdfdoc> {
     const pdfdoc = await this.pdfdocRespository.preload({
       id:id,
       ...updatePdfdocDto
@@ -42,7 +42,7 @@ export class PdfdocService {
     return this.pdfdocRespository.save(pdfdoc);
   }
 
-   async remove(id: string) {
+   async remove(id: number) : Promise<Pdfdoc> {
     const pdfdoc = await this.findOne(id);
     return this.pdfdocRespository.remove(pdfdoc);
   }

@@ -1,6 +1,3 @@
-
-
-
 import {
 Controller, Get,Post,Body,Patch,Param,Delete,HttpStatus,Res,} from '@nestjs/common';
 import { UserService } from './user.service';
@@ -49,7 +46,7 @@ export class UserController {
     
   }
   @Get(':id')
-  async findOne(@Param('id') id: string, @Res() response: express.Response) {
+  async findOne(@Param('id') id: number, @Res() response: express.Response) {
     try {
       const user = await this.userService.findOne(id);
       return response.status(HttpStatus.OK).json({
@@ -65,7 +62,7 @@ export class UserController {
   }
 
   @Patch(':id')
- async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Res() response: express.Response): Promise<express.Response> {
+ async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto, @Res() response: express.Response): Promise<express.Response> {
     try {
       const updatedUser = await this.userService.update(id, updateUserDto);
       return response.status(HttpStatus.OK).json({
@@ -81,7 +78,7 @@ export class UserController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Res() response: express.Response) {
+  async remove(@Param('id') id: number, @Res() response: express.Response) {
     try {
       const deletedUser = await this.userService.remove(id);
       return response.status(HttpStatus.OK).json({

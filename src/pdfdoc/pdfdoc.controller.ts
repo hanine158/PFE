@@ -39,7 +39,7 @@ export class PdfdocController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Res() response) {
+  async findOne(@Param('id') id: number, @Res() response) {
     try{
       const pdfdoc = await this.pdfdocService.findOne(id);
       return response.status(HttpStatus.OK).json({
@@ -54,7 +54,7 @@ export class PdfdocController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updatePdfdocDto: UpdatePdfdocDto, @Res() response) {
+  async update(@Param('id') id: number, @Body() updatePdfdocDto: UpdatePdfdocDto, @Res() response) {
     try{
       const pdfdoc = await this.pdfdocService.update(id, updatePdfdocDto);
       return response.status(HttpStatus.OK).json({
@@ -69,7 +69,7 @@ export class PdfdocController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Res() response) {
+  async remove(@Param('id') id: number, @Res() response) {
     try{
       await this.pdfdocService.remove(id);
       return response.status(HttpStatus.OK).json({
