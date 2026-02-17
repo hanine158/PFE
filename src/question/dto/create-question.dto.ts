@@ -1,20 +1,20 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsString, IsArray } from "class-validator";
 
 export class CreateQuestionDto {
 
-    @IsString()
-    @IsNotEmpty()
-    texte: string;
+  @IsString()
+  @IsNotEmpty()
+  texte: string;
 
-    @IsString()
-    @IsNotEmpty()
-    type: string;
+  @IsString()
+  @IsNotEmpty()
+  type: string;
 
-    @IsString({ each: true })
-    @IsNotEmpty()
-    options: string[];
+  @IsArray()
+  @IsNotEmpty({ each: true })
+  options: string[];
 
-    @IsString()
-    @IsNotEmpty()
-    reponse: string;
+  @IsString()
+  @IsNotEmpty()
+  reponse: string;
 }

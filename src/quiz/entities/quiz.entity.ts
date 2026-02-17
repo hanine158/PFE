@@ -1,36 +1,27 @@
 import { AnalyseRe } from "src/analyse-res/entities/analyse-re.entity";
 import { Question } from "src/question/entities/question.entity";
-import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("quiz")
 export class Quiz {
 
-    @PrimaryGeneratedColumn()
-    id:string;
+  @PrimaryGeneratedColumn()
+  id: number;     
 
-    @Column()
-    titre:string;
+  @Column()
+  titre: string;
 
-    @Column()
-    niveauDifficulte:string;
+  @Column()
+  niveauDifficulte: string;
 
-    @Column({type:"simple-array"})
-    questions:Question[];
-
-      @ManyToMany(() => AnalyseRe, (analyse) => analyse.quizs)
-  @JoinTable({
-    name: 'analyse_quiz',
-    joinColumn: {
-      name: 'quiz_id',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'analyseRe_id',
-      referencedColumnName: 'id',
-    },
+  @ManyToOne(() => AnalyseRe, (analyse) => analyse.quizs, {
+    onDelete: "CASCADE",
   })
-  analyseRe: AnalyseRe[];
+  analyseRe: AnalyseRe;
 
-    
-
+  @OneToMany(() => Question, (question) => question.quiz, {
+    cascade: true,
+  })
+  questions: Question[];
 }
+

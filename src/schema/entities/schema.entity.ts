@@ -1,39 +1,23 @@
 import { AnalyseRe } from "src/analyse-res/entities/analyse-re.entity";
-import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("schema")
 export class Schema {
 
-    @PrimaryGeneratedColumn()
-    id:number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    titre:string;
+  @Column()
+  titre: string;
 
-    @Column()
-    contenu:string;
+  @Column()
+  contenu: string;
 
-    @Column()
-    imageUrl:string;
+  @Column({ nullable: true })
+  imageUrl: string;
 
-    @ManyToMany(() => AnalyseRe, (analyse) => analyse.schema, {
-  cascade: false,
-})
-@JoinTable({
-  name: 'analyse_schema', 
-  joinColumn: {
-    name: 'schema_id',
-    referencedColumnName: 'id',
-  },
-  inverseJoinColumn: {
-    name: 'analyseRe_id',
-    referencedColumnName: 'id',
-  },
-})
-analyseRe: AnalyseRe[];
-
-
-
-
-
+  @ManyToOne(() => AnalyseRe, (analyse) => analyse.schemas, {
+    onDelete: "CASCADE",
+  })
+  analyseRe: AnalyseRe;
 }

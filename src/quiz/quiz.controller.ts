@@ -38,7 +38,7 @@ export class QuizController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Res() response) {
+  async findOne(@Param('id') id: number, @Res() response) {
     try {
       const quiz = await this.quizService.findOne(id);
       return response.status(HttpStatus.OK).json({
@@ -53,7 +53,7 @@ export class QuizController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateQuizDto: UpdateQuizDto, @Res() response) {
+  async update(@Param('id') id: number, @Body() updateQuizDto: UpdateQuizDto, @Res() response) {
     try {
       const updatedQuiz = await this.quizService.update(id, updateQuizDto);
       return response.status(HttpStatus.OK).json({
@@ -68,7 +68,7 @@ export class QuizController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Res() response) {
+  async remove(@Param('id') id: number, @Res() response) {
     try {
       const removedQuiz = await this.quizService.remove(id);
       return response.status(HttpStatus.OK).json({

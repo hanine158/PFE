@@ -1,18 +1,23 @@
-import { IsNotEmpty } from "class-validator";
-import { Question } from "src/question/entities/question.entity";
-import { Quiz } from "src/quiz/entities/quiz.entity";
-import { Schema } from "src/schema/entities/schema.entity";
+import { Type } from "class-transformer";
+import { ValidateNested, IsArray } from "class-validator";
+import { CreateSchemaDto } from "src/schema/dto/create-schema.dto";
+import { CreateQuizDto } from "src/quiz/dto/create-quiz.dto";
+import { CreateQuestionDto } from "src/question/dto/create-question.dto";
 
 export class CreateAnalyseReDto {
 
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateSchemaDto)
+  schemas: CreateSchemaDto[];
 
-    @IsNotEmpty()
-    schemas:Schema[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuizDto)
+  quizs: CreateQuizDto[];
 
-    @IsNotEmpty()
-    quiz:Quiz[];
-
-    @IsNotEmpty()
-    questions:Question[];
-    
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuestionDto)
+  questions: CreateQuestionDto[];
 }
