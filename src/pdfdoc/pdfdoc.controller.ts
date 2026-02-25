@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, HttpStatus, UseGuards } from '@nestjs/common';
 import { PdfdocService } from './pdfdoc.service';
 import { CreatePdfdocDto } from './dto/create-pdfdoc.dto';
 import { UpdatePdfdocDto } from './dto/update-pdfdoc.dto';
 import { response } from 'express';
+import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+
+ 
 
 @Controller('pdfdoc')
 export class PdfdocController {
@@ -22,7 +25,7 @@ export class PdfdocController {
       })
     }
   }
-
+@UseGuards(AccessTokenGuard)
   @Get()
  async findAll(@Res() response) {
     try{

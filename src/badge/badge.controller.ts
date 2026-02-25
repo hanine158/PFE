@@ -1,10 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res, UseGuards } from '@nestjs/common';
 import { BadgeService } from './badge.service';
 import { CreateBadgeDto } from './dto/create-badge.dto';
 import { UpdateBadgeDto } from './dto/update-badge.dto';
 import { response } from 'express';
 import { error } from 'console';
 import { Badge } from './entities/badge.entity';
+import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+ @UseGuards(AccessTokenGuard)
+
 
 @Controller('badge')
 export class BadgeController {

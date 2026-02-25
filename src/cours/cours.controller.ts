@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res, UseGuards } from '@nestjs/common';
 import { CoursService } from './cours.service';
 import { CreateCourDto } from './dto/create-cour.dto';
 import { UpdateCourDto } from './dto/update-cour.dto';
 import { response } from 'express';
+import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+ @UseGuards(AccessTokenGuard)
 
 @Controller('cours')
 export class CoursController {

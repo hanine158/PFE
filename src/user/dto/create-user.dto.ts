@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
 import { Badge } from 'src/badge/entities/badge.entity';
 
 export class CreateUserDto {
@@ -26,4 +26,8 @@ export class CreateUserDto {
    @IsNotEmpty()
    @MinLength(6)
    password: string;
+
+    @IsOptional()
+  @IsString()
+  refreshToken: string |null;
 }

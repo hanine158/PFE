@@ -11,6 +11,9 @@ import { SchemaModule } from './schema/schema.module';
 import { QuizModule } from './quiz/quiz.module';
 import { QuestionModule } from './question/question.module';
 import { AnalyseResModule } from './analyse-res/analyse-res.module';
+import { AuthModule } from './auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [ TypeOrmModule.forRoot({
@@ -22,8 +25,29 @@ import { AnalyseResModule } from './analyse-res/analyse-res.module';
     database: 'db1',
     entities:[__dirname +'/**/*.entity{.ts,.js}'],
     synchronize:true,
+    
 
-  }), UserModule, BadgeModule, CoursModule, ProgressModule, PdfdocModule, SchemaModule, QuizModule, QuestionModule, AnalyseResModule],
+
+  }),
+   UserModule, BadgeModule, CoursModule, ProgressModule, PdfdocModule, SchemaModule, QuizModule, QuestionModule, AnalyseResModule, AuthModule , ConfigModule.forRoot({isGlobal:true}),
+  MailerModule.forRoot({
+      transport: {
+        host: "smtp.gmail.com",
+        port:587,
+        secure: false, // Use TLS
+        tls: {
+  rejectUnauthorized: false
+},
+        auth: {
+        from: process.env.MAIL_FROM,
+          user: "moussihanine@gmail.com",
+          pass: "vwuo nwrc ewfn shnj"
+        },
+      },
+      defaults: {
+        from: process.env.MAIL_FROM,
+      },
+    }),],
   controllers: [AppController],
   providers: [AppService],
 })

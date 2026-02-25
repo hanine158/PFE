@@ -3,7 +3,6 @@ import { Badge } from "src/badge/entities/badge.entity";
 import { BaseEntity, BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, TableExclusion, TableInheritance } from "typeorm";
 import*  as argon2 from 'argon2';
 import { Progress } from "src/progress/entities/progress.entity";
-import { Pdfdoc } from "src/pdfdoc/entities/pdfdoc.entity";
 import { Cour } from "src/cours/entities/cour.entity";
 @Entity("user")
 
@@ -12,7 +11,7 @@ export class User {
     id:number
     @Column()
     name:string
-    @Column()
+    @Column({unique:true})
     email:string
     @Column()
     niveau:string
@@ -26,13 +25,10 @@ export class User {
     @Column()
     password:string;
 
-    @BeforeInsert()
-    @BeforeUpdate()
-    async hashPassword() {
-        if(this.password && this.password.startsWith("$argon2")){
-            this.password = await argon2.hash(this.password)
-        }
-    }
+   @Column({ nullable: true, type: "varchar" })
+refreshToken: string;
+
+
        @OneToMany(()=> Badge, (Badge)=>Badge.user,{
         cascade:true,
        })
@@ -52,6 +48,14 @@ export class User {
    @JoinColumn()
    progress: Progress;
 
+
+       @BeforeInsert()
+    @BeforeUpdate()
+    async hashPassword() {
+        if(this.password && !this.password.startsWith("$argon2")){
+            this.password = await argon2.hash(this.password)
+        }
+    }
    
    }
 

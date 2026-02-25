@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res, UseGuards } from '@nestjs/common';
 import { ProgressService } from './progress.service';
 import { CreateProgressDto } from './dto/create-progress.dto';
 import { UpdateProgressDto } from './dto/update-progress.dto';
 import { response } from 'express';
 import { Progress } from './entities/progress.entity';
+import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+
+ 
 
 @Controller('progress')
 export class ProgressController {
@@ -22,6 +25,7 @@ export class ProgressController {
       message:"failed to create progress"+error.message,
     })
   }}
+  @UseGuards(AccessTokenGuard)
 
   @Get()
  async findAll(@Res() response) {

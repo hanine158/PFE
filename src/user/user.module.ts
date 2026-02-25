@@ -14,5 +14,6 @@ import { Progress } from 'src/progress/entities/progress.entity';
 ],
   controllers: [UserController],
   providers: [UserService],
+  exports:[UserService],
 })
 export class UserModule {}

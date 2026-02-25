@@ -1,10 +1,12 @@
 import {
-Controller, Get,Post,Body,Patch,Param,Delete,HttpStatus,Res,} from '@nestjs/common';
+Controller, Get,Post,Body,Patch,Param,Delete,HttpStatus,Res,
+UseGuards,} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import express from 'express';
 import { User } from './entities/user.entity';
+import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
 
 @Controller('user')
 export class UserController {
@@ -29,6 +31,7 @@ export class UserController {
     }
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get()
  async findAll(@Res()response) {
     try{
@@ -45,6 +48,8 @@ export class UserController {
     }
     
   }
+    @UseGuards(AccessTokenGuard)
+
   @Get(':id')
   async findOne(@Param('id') id: number, @Res() response: express.Response) {
     try {
@@ -60,6 +65,7 @@ export class UserController {
       });
     }
   }
+  @UseGuards(AccessTokenGuard)
 
   @Patch(':id')
  async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto, @Res() response: express.Response): Promise<express.Response> {
@@ -76,6 +82,7 @@ export class UserController {
       });
     }
   }
+  @UseGuards(AccessTokenGuard)
 
   @Delete(':id')
   async remove(@Param('id') id: number, @Res() response: express.Response) {
@@ -93,36 +100,36 @@ export class UserController {
     }
 
   }
-  @Post('login')
-  async login(@Body() loginDto: any, @Res() response: express.Response) {
-    try {
-      const user = await this.userService.login(loginDto.email, loginDto.password);
-      return response.status(HttpStatus.OK).json({
-        message: "Connexion réussie",
-        data: user,
-      });
-    } catch (error) {
-      return response.status(HttpStatus.NOT_FOUND).json({
-        statusCode: 404,
-        message: "Erreur de connexion : " + error.message,
-      });
-    }
-  }
-  @Post('register')
-  async register(@Body() registerDto: CreateUserDto, @Res() response: express.Response) {
-    try {
-      const user = await this.userService.create(registerDto);
-      return response.status(HttpStatus.CREATED).json({
-        message: "Inscription réussie",
-        data: user,
-      });
-    } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).json({
-        statusCode: 400,
-        message: "Erreur lors de l'inscription : " + error.message,
-      });
-    }
+ // @Post('login')
+ // async login(@Body() loginDto: any, @Res() response: express.Response) {
+  //  try {
+     // const user = await this.userService.login(loginDto.email, loginDto.password);
+    //  return response.status(HttpStatus.OK).json({
+     //   message: "Connexion réussie",
+     //   data: user,
+     // });
+   // } catch (error) {
+    //  return response.status(HttpStatus.NOT_FOUND).json({
+    //    statusCode: 404,
+    //    message: "Erreur de connexion : " + error.message,
+    //  });
+   // }
+  //}
+ // @Post('register')
+ // async register(@Body() registerDto: CreateUserDto, @Res() response: express.Response) {
+ //   try {
+   //   const user = await this.userService.create(registerDto);
+     // return response.status(HttpStatus.CREATED).json({
+       // message: "Inscription réussie",
+       // data: user,
+    //  });
+   // } catch (error) {
+    //  return response.status(HttpStatus.BAD_REQUEST).json({
+     //   statusCode: 400,
+     //   message: "Erreur lors de l'inscription : " + error.message,
+     // });
+   // }
 
 
-  }
+//  }
 }

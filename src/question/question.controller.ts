@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res, UseGuards } from '@nestjs/common';
 import { QuestionService } from './question.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
 
 @Controller('question')
 export class QuestionController {
@@ -24,7 +25,7 @@ export class QuestionController {
   
   
   }
-
+@UseGuards(AccessTokenGuard)
   @Get()
   async findAll(@Res() response) {
     try{

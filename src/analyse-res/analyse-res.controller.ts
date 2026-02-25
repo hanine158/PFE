@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res, UseGuards } from '@nestjs/common';
 import { AnalyseResService } from './analyse-res.service';
 import { CreateAnalyseReDto } from './dto/create-analyse-re.dto';
 import { UpdateAnalyseReDto } from './dto/update-analyse-re.dto';
 import { response } from 'express';
+import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+  @UseGuards(AccessTokenGuard)
 
 @Controller('analyse-res')
 export class AnalyseResController {
