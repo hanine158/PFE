@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UserService } from 'src/user/user.service';
@@ -138,5 +138,32 @@ export class AuthService {
       return 'erreur';
     }
   }
+  async resetPassword(token: string, password: string) {
+    try {
+      const verifiedToken = await this.jwtService.verify(token, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+      });
+      if (!verifiedToken) {
+        throw new UnauthorizedException('Invalid or expired');
+      } else {
+        const user= await this.userService.findOne(
+          verifiedToken.id,
+        );
+        if (!user) {
+          throw new NotFoundException('User not found');
+        }
+        user.password= password;
+        user.refreshToken= null;
+        await this.userService.saveUser(user);
+        return {
+          success: true,
+          message: 'Password changed successfully',
+        };
+      }
+    } catch (error) {
+      throw new UnauthorizedException(`Unvalid or expired token , ${error}`);
+    }
+  }
+  
   
 }

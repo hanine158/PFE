@@ -1,135 +1,57 @@
-import {
-Controller, Get,Post,Body,Patch,Param,Delete,HttpStatus,Res,
-UseGuards,} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Delete, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import express from 'express';
 import { User } from './entities/user.entity';
-import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  // Créer un nouvel utilisateur
   @Post()
-  async create(
-    @Body() createUserDto: CreateUserDto, @Res() response: express.Response, ) {
-    try {
-      const newUser = await this.userService.create(createUserDto);
-
-      return response.status(HttpStatus.CREATED).json({
-        message: 'Utilisateur créé avec succès',
-        data: newUser,
-      });
-    } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).json({
-        statusCode: 400,
-        message:
-          "Erreur lors de la création de l'utilisateur : " + error.message,
-      });
-    }
+  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
+    return await this.userService.create(createUserDto);
   }
 
-  @UseGuards(AccessTokenGuard)
+  // Récupérer tous les utilisateurs
   @Get()
- async findAll(@Res()response) {
-    try{
-      const user=await this.userService.findAll();
-      return response.status(HttpStatus.OK).json({
-        message:"this all users",user
-      })
-    }catch(error){
-       return response.status(HttpStatus.BAD_REQUEST).json({
-        statusCode : 400,
-        message:"erreur data not found"+error.message
-      })
-      
-    }
-    
+  async findAll(): Promise<User[]> {
+    return await this.userService.findAll();
   }
-    @UseGuards(AccessTokenGuard)
 
+  // Récupérer un utilisateur par ID
   @Get(':id')
-  async findOne(@Param('id') id: number, @Res() response: express.Response) {
-    try {
-      const user = await this.userService.findOne(id);
-      return response.status(HttpStatus.OK).json({
-        message: "Utilisateur trouvé",
-        data: user,
-      });
-    } catch (error) {
-      return response.status(HttpStatus.NOT_FOUND).json({
-        statusCode: 404,
-        message: "Utilisateur non trouvé : " + error.message,
-      });
-    }
+  async findOne(@Param('id') id: number): Promise<User> {
+    return await this.userService.findOne(id);
   }
-  @UseGuards(AccessTokenGuard)
 
-  @Patch(':id')
- async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto, @Res() response: express.Response): Promise<express.Response> {
-    try {
-      const updatedUser = await this.userService.update(id, updateUserDto);
-      return response.status(HttpStatus.OK).json({
-        message: "Utilisateur mis à jour avec succès",
-        data: updatedUser,
-      });
-    } catch (error) {
-      return response.status(HttpStatus.NOT_FOUND).json({
-        statusCode: 404,
-        message: "Erreur lors de la mise à jour de l'utilisateur : " + error.message,
-      });
-    }
+  // Mettre à jour un utilisateur
+  @Put(':id')
+  async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<User> {
+    return await this.userService.update(id, updateUserDto);
   }
-  @UseGuards(AccessTokenGuard)
 
+  // Supprimer un utilisateur
   @Delete(':id')
-  async remove(@Param('id') id: number, @Res() response: express.Response) {
-    try {
-      const deletedUser = await this.userService.remove(id);
-      return response.status(HttpStatus.OK).json({
-        message: "Utilisateur supprimé avec succès",
-        data: deletedUser,
-      });
-    } catch (error) {
-      return response.status(HttpStatus.NOT_FOUND).json({
-        statusCode: 404,
-        message: "Erreur lors de la suppression de l'utilisateur : " + error.message,
-      });
-    }
-
+  async remove(@Param('id') id: number): Promise<User> {
+    return await this.userService.remove(id);
   }
- // @Post('login')
- // async login(@Body() loginDto: any, @Res() response: express.Response) {
-  //  try {
-     // const user = await this.userService.login(loginDto.email, loginDto.password);
-    //  return response.status(HttpStatus.OK).json({
-     //   message: "Connexion réussie",
-     //   data: user,
-     // });
-   // } catch (error) {
-    //  return response.status(HttpStatus.NOT_FOUND).json({
-    //    statusCode: 404,
-    //    message: "Erreur de connexion : " + error.message,
-    //  });
-   // }
-  //}
- // @Post('register')
- // async register(@Body() registerDto: CreateUserDto, @Res() response: express.Response) {
- //   try {
-   //   const user = await this.userService.create(registerDto);
-     // return response.status(HttpStatus.CREATED).json({
-       // message: "Inscription réussie",
-       // data: user,
-    //  });
-   // } catch (error) {
-    //  return response.status(HttpStatus.BAD_REQUEST).json({
-     //   statusCode: 400,
-     //   message: "Erreur lors de l'inscription : " + error.message,
-     // });
-   // }
 
+  // Login
+  @Post('login')
+  async login(@Body() body: { email: string; password: string }): Promise<User> {
+    const { email, password } = body;
+    if (!email || !password) {
+      throw new BadRequestException('Email and password are required');
+    }
+    return await this.userService.validateUser(email, password);
+  }
 
-//  }
+  // Mettre à jour refresh token
+  @Put('refresh-token/:id')
+  async updateToken(@Param('id') id: number, @Body() body: { token: string }): Promise<User> {
+    const { token } = body;
+    return await this.userService.updateToken(id, token);
+  }
 }

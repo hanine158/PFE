@@ -14,6 +14,7 @@ import { AnalyseResModule } from './analyse-res/analyse-res.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { EnseignantModule } from './enseignant/enseignant.module';
 
 @Module({
   imports: [ TypeOrmModule.forRoot({
@@ -47,7 +48,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
       defaults: {
         from: process.env.MAIL_FROM,
       },
-    }),],
+    }),
+  EnseignantModule,],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -1,61 +1,60 @@
-import { argon2d } from "argon2";
+import { BaseEntity, BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import * as argon2 from 'argon2';
 import { Badge } from "src/badge/entities/badge.entity";
-import { BaseEntity, BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, TableExclusion, TableInheritance } from "typeorm";
-import*  as argon2 from 'argon2';
 import { Progress } from "src/progress/entities/progress.entity";
 import { Cour } from "src/cours/entities/cour.entity";
+
 @Entity("user")
-
-export class User {
+export class User extends BaseEntity {
     @PrimaryGeneratedColumn()
-    id:number
-    @Column()
-    name:string
-    @Column({unique:true})
-    email:string
-    @Column()
-    niveau:string
+    id: number;
 
     @Column()
-    xp:number
+    name: string;
 
-    @Column("simple-array")
-    badges:Badge[]
+    @Column({ unique: true })
+    email: string;
 
     @Column()
-    password:string;
+    niveau: string;
 
-   @Column({ nullable: true, type: "varchar" })
-refreshToken: string;
+    @Column()
+    xp: number;
 
+    @Column()
+    password: string;
 
-       @OneToMany(()=> Badge, (Badge)=>Badge.user,{
-        cascade:true,
-       })
-       badge: Badge[];
+    @Column({ default: 'student' }) // Valeur par défaut
+    role: string;
 
-       @OneToMany(() => Cour, (Cour) => Cour.user, {
-        cascade:true
-       })
-        cour: Cour[];
-  
-    @OneToOne(() => Progress, (progress) => progress.user, {
-        cascade:true,
-        nullable: true,
-        eager: false
+    @Column({ nullable: true, type: "varchar" })
+    refreshToken: string | null;
 
+    // Relations
+    @OneToMany(() => Badge, (badge) => badge.user, {
+        cascade: true,
     })
-   @JoinColumn()
-   progress: Progress;
+    badges: Badge[];
 
+    @OneToMany(() => Cour, (cour) => cour.user, {
+        cascade: true,
+    })
+    cours: Cour[];
 
-       @BeforeInsert()
+    @OneToOne(() => Progress, (progress) => progress.user, {
+        cascade: true,
+        nullable: true,
+        eager: false,
+    })
+    @JoinColumn()
+    progress: Progress;
+
+    // Hash mot de passe avant insert/update
+    @BeforeInsert()
     @BeforeUpdate()
     async hashPassword() {
-        if(this.password && !this.password.startsWith("$argon2")){
-            this.password = await argon2.hash(this.password)
+        if (this.password && !this.password.startsWith("$argon2")) {
+            this.password = await argon2.hash(this.password);
         }
     }
-   
-   }
-
+}
