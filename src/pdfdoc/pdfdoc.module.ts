@@ -1,13 +1,14 @@
+// src/pdfdoc/pdfdoc.module.ts
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { PdfdocService } from './pdfdoc.service';
 import { PdfdocController } from './pdfdoc.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { Pdfdoc } from './entities/pdfdoc.entity';
-import { Cour } from 'src/cours/entities/cour.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Pdfdoc , Cour])],
+  imports: [TypeOrmModule.forFeature([Pdfdoc])],
   controllers: [PdfdocController],
   providers: [PdfdocService],
+  exports: [PdfdocService],
 })
 export class PdfdocModule {}

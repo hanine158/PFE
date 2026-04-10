@@ -1,27 +1,23 @@
-import { User } from "src/user/entities/user.entity";
+import { User } from "../../user/entities/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
- @Entity("badge")
+@Entity("badge")
 export class Badge {
     @PrimaryGeneratedColumn()
-    id:number;
+    id!: number;
 
     @Column()
-    nom:string;
+    nom!: string;
 
     @Column()
-    icone:string;
+    icone!: string;
 
     @Column()
-    description:string;
+    description!: string;
 
-    @ManyToOne(() => User, (user) => user.badges,{
-        onDelete:"CASCADE"
+    @ManyToOne(() => User, (user) => user.badges, {
+        onDelete: "CASCADE"
     })
     @JoinColumn()
-    user: User;
-
-
-
-
+    user!: User;
 }

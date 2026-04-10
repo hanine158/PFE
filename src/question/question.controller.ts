@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res, Use
 import { QuestionService } from './question.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 
 @Controller('question')
 export class QuestionController {
@@ -18,7 +18,7 @@ export class QuestionController {
       });
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message : error.message
+        message :"failed to create question",
 
       })
     }
@@ -36,7 +36,7 @@ export class QuestionController {
       });
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message : error.message
+        message :"failed to retrieve questions",
 
       })
     }
@@ -52,7 +52,7 @@ export class QuestionController {
       });
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message : error.message
+        message : "failed to retrieve question",
 
       })
     }
@@ -68,7 +68,7 @@ export class QuestionController {
       });
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message : error.message
+        message : "failed to update question"
 
       })
     }
@@ -84,7 +84,7 @@ export class QuestionController {
       });
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message : error.message
+        message : "failed to delete question"
 
       })
     }

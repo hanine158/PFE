@@ -1,23 +1,22 @@
-import { AnalyseRe } from "src/analyse-res/entities/analyse-re.entity";
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { AnalyseRe } from "../../analyse-res/entities/analyse-re.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("schema")
 export class Schema {
-
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  titre: string;
+  titre!: string;
 
-  @Column()
-  contenu: string;
+  @Column({ type: "text" })
+  contenu!: string;
 
-  @Column({ nullable: true })
-  imageUrl: string;
+  @Column({ type: "text", nullable: true }) // 🔥 التصحيح هنا
+  imageUrl!: string | null;
 
   @ManyToOne(() => AnalyseRe, (analyse) => analyse.schemas, {
     onDelete: "CASCADE",
   })
-  analyseRe: AnalyseRe;
+  analyseRe!: AnalyseRe;
 }

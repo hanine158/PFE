@@ -1,20 +1,19 @@
 import { IsNotEmpty, IsString, IsArray } from "class-validator";
 
 export class CreateQuestionDto {
+  @IsString()
+  @IsNotEmpty()
+  texte!: string;
 
   @IsString()
   @IsNotEmpty()
-  texte: string;
-
-  @IsString()
-  @IsNotEmpty()
-  type: string;
+  type!: string;
 
   @IsArray()
   @IsNotEmpty({ each: true })
-  options: string[];
+  options!: string[];
 
   @IsString()
   @IsNotEmpty()
-  reponse: string;
+  reponse!: string;
 }

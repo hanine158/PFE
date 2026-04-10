@@ -1,32 +1,31 @@
-import { Cour } from "src/cours/entities/cour.entity";
-import { User } from "src/user/entities/user.entity";
-import { Column, Entity , JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn} from "typeorm";
+// src/pdfdoc/entities/pdfdoc.entity.ts
+import { Cour } from '../../cours/entities/cour.entity';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn, CreateDateColumn, JoinColumn } from 'typeorm';
 
-@Entity("pdfdoc")
+@Entity('pdfdoc')
 export class Pdfdoc {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-    @Column()
-    nomfichier: string;
+  @Column()
+  filename!: string;
 
-    @Column()
-    contenutexteextrait: string;
+  @Column()
+  originalName!: string;
 
-    @Column()
-    urlstockage: string;
+  @Column()
+  filePath!: string;
 
-    @OneToOne(() => Cour, (cours) => cours.pdf, {
-           cascade:true,
-           nullable: true,
-           eager: false
-    })
+  @Column({ type: 'int' })
+  fileSize!: number;
 
-           @JoinColumn()
-           cours:Cour;
-  
+  @Column()
+  mimeType!: string;
 
+  @OneToOne(() => Cour, (cour) => cour.pdf, { nullable: true })
+  @JoinColumn()
+  cours!: Cour | null;
 
-    
-
+  @CreateDateColumn()
+  createdAt!: Date;
 }

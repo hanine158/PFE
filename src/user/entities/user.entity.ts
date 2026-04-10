@@ -1,45 +1,50 @@
 import { BaseEntity, BeforeInsert, BeforeUpdate, Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import * as argon2 from 'argon2';
-import { Badge } from "src/badge/entities/badge.entity";
-import { Progress } from "src/progress/entities/progress.entity";
-import { Cour } from "src/cours/entities/cour.entity";
+import { Badge } from "../../badge/entities/badge.entity";
+import { Progress } from "../../progress/entities/progress.entity";
+import { Cour } from "../../cours/entities/cour.entity";
+
+// ✅ Enum pour les rôles
+export enum UserRole {
+    STUDENT = 'student',
+    TEACHER = 'teacher',
+    ADMIN = 'admin'
+}
 
 @Entity("user")
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column()
-    name: string;
+    name!: string;
 
     @Column({ unique: true })
-    email: string;
+    email!: string;
 
     @Column()
-    niveau: string;
+    password!: string;
 
-    @Column()
-    xp: number;
-
-    @Column()
-    password: string;
-
-    @Column({ default: 'student' }) // Valeur par défaut
-    role: string;
+    @Column({ 
+        type: 'enum', 
+        enum: UserRole, 
+        default: UserRole.STUDENT 
+    })
+    role!: UserRole;
 
     @Column({ nullable: true, type: "varchar" })
-    refreshToken: string | null;
+    refreshToken!: string | null;
 
     // Relations
     @OneToMany(() => Badge, (badge) => badge.user, {
         cascade: true,
     })
-    badges: Badge[];
+    badges!: Badge[];
 
     @OneToMany(() => Cour, (cour) => cour.user, {
         cascade: true,
     })
-    cours: Cour[];
+    cours!: Cour[];
 
     @OneToOne(() => Progress, (progress) => progress.user, {
         cascade: true,
@@ -47,9 +52,8 @@ export class User extends BaseEntity {
         eager: false,
     })
     @JoinColumn()
-    progress: Progress;
+    progress!: Progress | null;
 
-    // Hash mot de passe avant insert/update
     @BeforeInsert()
     @BeforeUpdate()
     async hashPassword() {

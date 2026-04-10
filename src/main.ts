@@ -1,27 +1,30 @@
+// main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // ✅ Validation global
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  // ⚡️ تفعيل CORS باش frontend يشوف backend
+  
+  // ✅ Créer le dossier uploads/pdfs au démarrage
+  const uploadDir = path.join(process.cwd(), 'uploads', 'pdfs');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log(`📁 Dossier créé: ${uploadDir}`);
+  }
+  
+  // ✅ Autoriser votre frontend sur les ports (AJOUTER 3000)
   app.enableCors({
-    origin: "http://localhost:5173", // رابط الـ React frontend
-    credentials: true,               // لو حبيت ترسل كوكيز
+    origin: ['http://localhost:3000', 'http://localhost:3002', 'http://localhost:3001', 'http://localhost:5173'],
+    //        ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ Ajoutez cette ligne
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
-
- const port = process.env.PORT ?? 3001; // بدل 3000 الى 3001
-await app.listen(port);
-console.log(`Server running on http://localhost:${port}`);
+  
+  await app.listen(3001);
+  console.log('🚀 Backend démarré sur http://localhost:3001');
+  console.log(`📁 Les PDFs seront stockés dans: ${uploadDir}`);
 }
 bootstrap();

@@ -1,20 +1,18 @@
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class CreateBadgeDto {
-  
+  @IsString()
+  @IsNotEmpty()
+  nom!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    nom:string;
+  @IsString()
+  @IsNotEmpty()
+  icone!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    icone:string;
+  @IsString()
+  @IsNotEmpty()
+  description!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    description:string;
-
-    @IsNumber()
-    user:number;
+  @IsNumber()
+  user!: number;
 }

@@ -1,20 +1,19 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
 
 export class CreateSchemaDto {
+  @IsString()
+  @IsNotEmpty()
+  titre!: string;
 
-  
+  @IsString()
+  @IsNotEmpty()
+  contenu!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    titre:string;
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 
-    @IsString()
-    @IsNotEmpty()
-    contenu:string;
-
-     @IsString()
-    @IsOptional()   
-    imageUrl?: string;
-
-   
+  @IsOptional()
+  @IsNumber()
+  analyseReId?: number;
 }

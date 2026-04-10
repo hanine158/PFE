@@ -17,7 +17,7 @@ export class QuizController {
       });
     } catch (error) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message: error.message
+        message: "failed to create quiz",
       });
     }
   }
@@ -32,7 +32,7 @@ export class QuizController {
       });
     } catch (error) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message: error.message
+        message: "failed to retrieve quizzes"
       });
     }
   }
@@ -47,7 +47,7 @@ export class QuizController {
       });
     } catch (error) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message: error.message
+        message: "failed to restrieve quiz",
       });
     }
   }
@@ -62,7 +62,7 @@ export class QuizController {
       });
     } catch (error) {
       return response.status(HttpStatus.NOT_FOUND).json({
-        message: error.message
+        message: "failed to update quiz",
       });
     }
   }
@@ -77,7 +77,7 @@ export class QuizController {
       });
     } catch (error) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message: error.message
+        message: "failed to delete quiz",
       });
     }
   }

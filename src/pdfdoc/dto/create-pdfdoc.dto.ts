@@ -1,18 +1,27 @@
-import { IsNotEmpty, IsString } from "class-validator";
+// src/pdfdoc/dto/create-pdfdoc.dto.ts
+import { IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class CreatePdfdocDto {
+  @IsString()
+  @IsNotEmpty()
+  filename!: string;
 
-     
+  @IsString()
+  @IsNotEmpty()
+  originalName!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    nomfichier: string;
+  @IsString()
+  @IsNotEmpty()
+  filePath!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    contenutexteextrait: string;
+  @IsNumber()
+  fileSize!: number;
 
-    @IsString()
-    @IsNotEmpty()
-    urlstockage: string;
+  @IsString()
+  @IsNotEmpty()
+  mimeType!: string;
+
+  @IsOptional()
+  @IsNumber()
+  coursId?: number;
 }

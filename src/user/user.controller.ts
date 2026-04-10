@@ -4,7 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 
-@Controller('users')
+@Controller('user') // Changed from 'users' to 'user'
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

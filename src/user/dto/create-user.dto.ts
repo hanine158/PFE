@@ -1,33 +1,24 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
-import { Badge } from 'src/badge/entities/badge.entity';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, IsIn } from 'class-validator';
 
 export class CreateUserDto {
-
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
-   niveau: string;
+  @MinLength(6)
+  password!: string;
 
-   @IsNotEmpty()
-   @IsNumber()
-   xp: number;
+  @IsOptional()
+  @IsIn(['student', 'teacher', 'admin'])
+  role?: string = 'student';
 
-   @IsNotEmpty()
-   badges: Badge[];
-
-   @IsString()
-   @IsNotEmpty()
-   @MinLength(6)
-   password: string;
-
-    @IsOptional()
+  @IsOptional()
   @IsString()
-  refreshToken: string |null;
+  refreshToken?: string | null;
 }

@@ -3,7 +3,7 @@ import { PdfdocService } from './pdfdoc.service';
 import { CreatePdfdocDto } from './dto/create-pdfdoc.dto';
 import { UpdatePdfdocDto } from './dto/update-pdfdoc.dto';
 import { response } from 'express';
-import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 
  
 
@@ -21,7 +21,7 @@ export class PdfdocController {
       })
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message:"failed to create pdfdoc"+error.message,
+        message:"failed to create pdfdoc",
       })
     }
   }
@@ -36,7 +36,7 @@ export class PdfdocController {
       })
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message:"failed to retrieve pdfdocs"+error.message,
+        message:"failed to retrieve pdfdocs",
       })
     }
   }
@@ -51,7 +51,7 @@ export class PdfdocController {
       })
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message:"failed to retrieve pdfdoc"+error.message,
+        message:"failed to retrieve pdfdoc",
       })
     }
   }
@@ -66,7 +66,7 @@ export class PdfdocController {
       })
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message:"failed to update pdfdoc"+error.message,
+        message:"failed to update pdfdoc",
       })
     }
   }
@@ -80,7 +80,7 @@ export class PdfdocController {
       })
     }catch(error){
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message:"failed to delete pdfdoc"+error.message,
+        message:"failed to delete pdfdoc",
       })
     }
   }

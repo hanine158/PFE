@@ -1,35 +1,33 @@
-import { AnalyseRe } from "src/analyse-res/entities/analyse-re.entity";
-import { Quiz } from "src/quiz/entities/quiz.entity";
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { AnalyseRe } from "../../analyse-res/entities/analyse-re.entity";
+import { Quiz } from "../../quiz/entities/quiz.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("question")
 export class Question {
-
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  texte: string;
+  texte!: string;
 
   @Column()
-  type: string;
+  type!: string;
 
-  @Column({ type: "simple-array" })
-  options: string[];
+  @Column({ type: "simple-array", default: [] })
+  options!: string[];
 
   @Column()
-  reponse: string;
+  reponse!: string;
 
   @ManyToOne(() => Quiz, (quiz) => quiz.questions, {
     onDelete: "CASCADE",
     nullable: true
   })
-  quiz: Quiz;   
+  quiz!: Quiz | null;
 
   @ManyToOne(() => AnalyseRe, (analyseRe) => analyseRe.questions, {
     onDelete: "CASCADE",
     nullable: true
   })
-  analyseRe: AnalyseRe;
+  analyseRe!: AnalyseRe | null;
 }
-

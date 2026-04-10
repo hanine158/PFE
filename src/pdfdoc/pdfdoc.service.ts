@@ -1,50 +1,45 @@
+// src/pdfdoc/pdfdoc.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreatePdfdocDto } from './dto/create-pdfdoc.dto';
-import { UpdatePdfdocDto } from './dto/update-pdfdoc.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pdfdoc } from './entities/pdfdoc.entity';
+import { CreatePdfdocDto } from './dto/create-pdfdoc.dto';
+import { UpdatePdfdocDto } from './dto/update-pdfdoc.dto';
 
 @Injectable()
 export class PdfdocService {
   constructor(
-    @InjectRepository(Pdfdoc) private pdfdocRespository: Repository<Pdfdoc>,
-  ){}
-  async create(createPdfdocDto: CreatePdfdocDto) : Promise<Pdfdoc> {
-    const pdfdoc = this.pdfdocRespository.create(createPdfdocDto);
-    return this.pdfdocRespository.save(pdfdoc);
+    @InjectRepository(Pdfdoc)
+    private pdfdocRepository: Repository<Pdfdoc>,
+  ) {}
+
+  async create(createPdfdocDto: CreatePdfdocDto): Promise<Pdfdoc> {
+    // ✅ Correction: create prend un objet, pas un tableau
+    const pdfdoc = this.pdfdocRepository.create(createPdfdocDto);
+    // ✅ Correction: save retourne un objet, pas un tableau
+    return this.pdfdocRepository.save(pdfdoc);
   }
 
-  async findAll() : Promise<Pdfdoc[]> {
-    const pdfdocs = await this.pdfdocRespository.find();
-    if(pdfdocs.length==0){
-      throw new NotFoundException("pdfdoc data not found")
-    }
-    return pdfdocs;
+  async findAll(): Promise<Pdfdoc[]> {
+    return this.pdfdocRepository.find();
   }
 
-  async findOne(id: number) : Promise<Pdfdoc> {
-    const pdfdoc = await this.pdfdocRespository.findOneBy({id});
-    if(!pdfdoc){
-      throw new NotFoundException("pdfdoc data not found")
+  async findOne(id: number): Promise<Pdfdoc> {
+    const pdfdoc = await this.pdfdocRepository.findOne({ where: { id } });
+    if (!pdfdoc) {
+      throw new NotFoundException(`PDF avec l'ID ${id} non trouvé`);
     }
     return pdfdoc;
   }
 
- async update(id: number, updatePdfdocDto: UpdatePdfdocDto) : Promise<Pdfdoc> {
-    const pdfdoc = await this.pdfdocRespository.preload({
-      id:id,
-      ...updatePdfdocDto
-    });
-    if(!pdfdoc){
-      throw new NotFoundException("pdfdoc data not found")
-    }
-    return this.pdfdocRespository.save(pdfdoc);
-  }
-
-   async remove(id: number) : Promise<Pdfdoc> {
+  async update(id: number, updatePdfdocDto: UpdatePdfdocDto): Promise<Pdfdoc> {
     const pdfdoc = await this.findOne(id);
-    return this.pdfdocRespository.remove(pdfdoc);
+    Object.assign(pdfdoc, updatePdfdocDto);
+    return this.pdfdocRepository.save(pdfdoc);
   }
 
+  async remove(id: number): Promise<void> {
+    const pdfdoc = await this.findOne(id);
+    await this.pdfdocRepository.remove(pdfdoc);
+  }
 }

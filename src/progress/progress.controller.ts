@@ -4,7 +4,7 @@ import { CreateProgressDto } from './dto/create-progress.dto';
 import { UpdateProgressDto } from './dto/update-progress.dto';
 import { response } from 'express';
 import { Progress } from './entities/progress.entity';
-import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 
  
 
@@ -22,7 +22,7 @@ export class ProgressController {
     })
    } catch(error) {
     return response.status(HttpStatus.BAD_REQUEST).json({
-      message:"failed to create progress"+error.message,
+      message:"failed to create progress",
     })
   }}
   @UseGuards(AccessTokenGuard)
@@ -37,7 +37,7 @@ export class ProgressController {
       })
     } catch(error) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message:"failed to retrieve progress data"+error.message,
+        message:"failed to retrieve progress data",
       })
     }
   }
@@ -53,7 +53,7 @@ export class ProgressController {
     }catch(error){
       return response.status(HttpStatus.NOT_FOUND).json({
          statusCode: 404,
-        message :"failed to retrieve progress data"+error.message,
+        message :"failed to retrieve progress data",
 
       })
     }
@@ -73,7 +73,7 @@ export class ProgressController {
       })
      } catch(error) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message :"failed to update progress"+error.message,
+        message :"failed to update progress",
       })
      }
   }
@@ -88,7 +88,7 @@ export class ProgressController {
       })
     } catch(error) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message :"failed to delete progress"+error.message,
+        message :"failed to delete progress",
       })
     }
   }
