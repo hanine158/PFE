@@ -1,16 +1,25 @@
-import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './jwt.strategy';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
-import { UserService } from '../user/user.service';
-import { AccessTokenStrategy } from './strategies/accessToken.strategy';
-import { refreshTokenStrategy } from './strategies/refreshToken.strategy';
+import { ConfigModule } from '@nestjs/config';
 
-@Module({ imports: [UserModule, JwtModule.register({})],
+@Module({
+  imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.register({
+      secret: process.env.JWT_ACCESS_SECRET || 'secretKey',
+      signOptions: { expiresIn: '15m' },
+    }),
+    forwardRef(() => UserModule),  // ✅ forwardRef pour éviter la circularité
+    ConfigModule,
+  ],
   controllers: [AuthController],
-  providers: [AuthService, AccessTokenStrategy,refreshTokenStrategy],
-
+  providers: [JwtStrategy, JwtAuthGuard, AuthService],
+  exports: [JwtStrategy, JwtAuthGuard, JwtModule, AuthService], // ✅ Export AuthService
 })
 export class AuthModule {}

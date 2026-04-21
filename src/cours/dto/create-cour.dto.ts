@@ -1,17 +1,30 @@
-// src/cours/dto/create-cour.dto.ts
-import { IsNotEmpty, IsNumber, IsString, IsOptional } from "class-validator";
-import { Type } from "class-transformer";
+import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateCourDto {
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   titre!: string;
 
-  @IsNumber()
-  @Type(() => Number)
-  user!: number;
-  
   @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @Type(() => Number)
   @IsNumber()
-  pdfId?: number;
+  price?: number;
+
+  @IsNotEmpty()
+  @Type(() => Number)
+  @IsNumber()
+  userId!: number;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

@@ -1,12 +1,16 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { AuthDto } from './dto/auth.dto';
 import * as argon2 from 'argon2';
 import { MailerService } from '@nestjs-modules/mailer';
+import { AuthDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,177 +18,161 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private MailerService: MailerService,
+    private mailerService: MailerService,
   ) {}
 
-  async signIn(data: AuthDto) {
-    // Add validation to ensure data.email and data.password are defined
+  // ========================= LOGIN =========================
+  async login(data: AuthDto) {
     if (!data.email || !data.password) {
       throw new BadRequestException('Email and password are required');
     }
 
     const user = await this.userService.findByEmail(data.email);
-    if (!user) throw new BadRequestException('User not found');
-    
-    const passwordMatches = await argon2.verify(user.password, data.password);
-    if (!passwordMatches) throw new BadRequestException('password is incorrect');
-    
-    const tokens = await this.getTokens(user.id, user.email);
+
+    const passwordValid = await argon2.verify(user.password, data.password);
+    if (!passwordValid) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    const tokens = await this.getTokens(user);
+
     await this.updateRefreshToken(user.id, tokens.refreshToken);
-    return { user, tokens };
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        xp: user.xp,
+        level: user.level,
+      },
+      tokens,
+    };
   }
 
+  // ========================= LOGOUT =========================
   async logout(userId: number) {
     await this.userService.update(userId, { refreshToken: null });
   }
 
-  async updateRefreshToken(userId: number, refreshToken: string) {
-    const hashedRefreshToken = await this.hashData(refreshToken);
-    await this.userService.update(userId, { refreshToken: hashedRefreshToken });
-  }
+  // ========================= TOKENS =========================
+  async getTokens(user: any) {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
 
-  async getTokens(userId: number, username: string) {
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        { sub: userId, username },
-        {
-          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-          expiresIn: '15m',
-        },
-      ),
-      this.jwtService.signAsync(
-        { sub: userId, username },
-        {
-          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
-        },
-      ),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: '15m',
+      }),
+
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: '7d',
+      }),
     ]);
+
     return { accessToken, refreshToken };
   }
 
-  hashData(data: string) {
-    return argon2.hash(data);
+  // ========================= HASH REFRESH TOKEN =========================
+  async updateRefreshToken(userId: number, refreshToken: string) {
+    const hashed = await argon2.hash(refreshToken);
+    await this.userService.update(userId, {
+      refreshToken: hashed,
+    });
   }
 
+  // ========================= REFRESH TOKENS =========================
   async refreshTokens(userId: number, refreshToken: string) {
     const user = await this.userService.findOne(userId);
-    if (!user || !user.refreshToken)
+
+    if (!user || !user.refreshToken) {
       throw new ForbiddenException('Access Denied');
-    
-    const refreshTokenMatches = await argon2.verify(
+    }
+
+    const refreshValid = await argon2.verify(
       user.refreshToken,
       refreshToken,
     );
-    if (!refreshTokenMatches) throw new ForbiddenException('Access Denied');
-    
-    const tokens = await this.getTokens(user.id, user.email);
+
+    if (!refreshValid) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    const tokens = await this.getTokens(user);
+
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+
     return tokens;
   }
 
+  // ========================= FORGOT PASSWORD =========================
   async forgotPassword(email: string) {
-    // Add validation
-    if (!email || email.trim() === '') {
-      throw new BadRequestException('Email is required');
+    if (!email) throw new BadRequestException('Email is required');
+
+    const user = await this.userService.findByEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    try {
-      const existing = await this.userService.findByEmail(email);
-      if (!existing) {
-        throw new NotFoundException('user not found');
-      }
-      
-      const token = await this.jwtService.sign(
-        {
-          id: existing.id,
-        },
-        {
-          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-          expiresIn: '10m',
-        },
-      );
-      
-      await this.userService.updateToken(existing.id, token);
-      
-      const options = {
-        to: existing.email,
-        subject: 'forget password',
-        html: `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
-  <h2 style="color: #2c3e50;">Password Reset Request</h2>
-  <p>Hello ${existing.email},</p>
-  <p>
-    We received a request to reset your password. 
-    If you made this request, please click the button below to set a new password.
-  </p>
-  <div style="text-align: center; margin: 30px 0;">
-    <a href="http://localhost:3001/auth/reset/${token}" 
-       style="background-color: #007bff; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-       Reset My Password
-    </a>
-  </div>
-  <p>
-    This link will expire in <strong>10 minutes</strong> for security reasons.
-  </p>
-  <p>
-    If you did not request a password reset, please ignore this email.
-    Your password will remain unchanged.
-  </p>
-  <hr style="margin: 30px 0;" />
-  <p style="font-size: 12px; color: gray;">
-    This is an automated message. Please do not reply to this email.
-  </p>
-</div>
-`,
-      };
-      
-      await this.MailerService.sendMail(options);
-      return {
-        success: true,
-        message: 'You can change password',
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      throw new BadRequestException(`Failed to process forgot password: ${errorMessage}`);
-    }
+    const token = this.jwtService.sign(
+      { id: user.id },
+      {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: '10m',
+      },
+    );
+
+    await this.userService.updateToken(user.id, token);
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Password reset',
+      html: `
+        <h3>Password Reset</h3>
+        <p>Click below to reset your password</p>
+        <a href="http://localhost:3001/auth/reset/${token}">
+          Reset Password
+        </a>
+      `,
+    });
+
+    return {
+      success: true,
+      message: 'Reset email sent',
+    };
   }
 
+  // ========================= RESET PASSWORD =========================
   async resetPassword(token: string, password: string) {
-    // Add validation
-    if (!token || token.trim() === '') {
-      throw new BadRequestException('Token is required');
-    }
-    if (!password || password.trim() === '') {
-      throw new BadRequestException('Password is required');
+    if (!token || !password) {
+      throw new BadRequestException('Token and password required');
     }
 
     try {
-      const verifiedToken = await this.jwtService.verify(token, {
+      const decoded = this.jwtService.verify(token, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
       });
-      
-      if (!verifiedToken) {
-        throw new UnauthorizedException('Invalid or expired token');
-      }
-      
-      const user = await this.userService.findOne(verifiedToken.id);
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-      
-      // Hash the new password before saving
-      user.password = await this.hashData(password);
+
+      const user = await this.userService.findOne(decoded.id);
+
+      user.password = await argon2.hash(password);
       user.refreshToken = null;
+
       await this.userService.saveUser(user);
-      
+
       return {
         success: true,
-        message: 'Password changed successfully',
+        message: 'Password updated successfully',
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      throw new UnauthorizedException(`Invalid or expired token: ${errorMessage}`);
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 }

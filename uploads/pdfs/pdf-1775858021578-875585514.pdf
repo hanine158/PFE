@@ -1,0 +1,68 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources 4 0 R /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Font << /F1 6 0 R >> /ProcSet [/PDF /Text] >>
+endobj
+5 0 obj
+<< /Length 500 >>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(Guide Complet JavaScript) Tj
+/F1 16 Tf
+100 650 Td
+(Cours par: Amina Benali) Tj
+100 600 Td
+(Chapitres du cours:) Tj
+/F1 12 Tf
+120 570 Td
+(1. Introduction a JavaScript - 45 min) Tj
+120 550 Td
+(2. Variables et Types - 50 min) Tj
+120 530 Td
+(3. Fonctions - 40 min) Tj
+120 510 Td
+(4. Boucles et Conditions - 55 min) Tj
+120 490 Td
+(5. Objets et Tableaux - 60 min) Tj
+120 470 Td
+(6. DOM Manipulation - 65 min) Tj
+120 450 Td
+(7. Evenements - 45 min) Tj
+120 430 Td
+(8. API et Fetch - 70 min) Tj
+/F1 16 Tf
+100 380 Td
+(Progression: 1/8 lecons completees) Tj
+/F1 14 Tf
+100 340 Td
+(Total: 430 minutes) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 7
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000222 00000 n
+0000000301 00000 n
+0000000885 00000 n
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+950
+%%EOF

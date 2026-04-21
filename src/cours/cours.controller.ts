@@ -1,5 +1,20 @@
-// src/cours/cours.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Res, UseGuards, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpStatus,
+  Res,
+  UseGuards,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { diskStorage } from 'multer';
@@ -10,8 +25,7 @@ import { UpdateCourDto } from './dto/update-cour.dto';
 import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 import * as fs from 'fs';
 
-// ⚠️ TEMPORAIRE: Commenté pour permettre les tests sans authentification
-// @UseGuards(AccessTokenGuard)
+@UseGuards(AccessTokenGuard)
 @Controller('cours')
 export class CoursController {
   constructor(private readonly coursService: CoursService) {}
@@ -19,18 +33,16 @@ export class CoursController {
   @Post()
   async create(@Body() createCourDto: CreateCourDto, @Res() response: Response) {
     try {
-      console.log('📝 Création cours:', createCourDto);
       const cour = await this.coursService.create(createCourDto);
       return response.status(HttpStatus.CREATED).json({
-        message: "Cours créé avec succès",
-        cour
+        message: 'Cours créé avec succès',
+        cour,
       });
     } catch (err) {
       const error = err as Error;
-      console.error('❌ Erreur création:', error.message);
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
-        message: error.message || "Erreur lors de la création du cours",
+        message: error.message || 'Erreur lors de la création du cours',
       });
     }
   }
@@ -40,182 +52,184 @@ export class CoursController {
     try {
       const cours = await this.coursService.findAll();
       return response.status(HttpStatus.OK).json({
-        message: "Liste des cours récupérée avec succès",
-        cours
+        message: 'Liste des cours récupérée avec succès',
+        cours,
       });
     } catch (err) {
       const error = err as Error;
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
-        message: error.message || "Erreur lors de la récupération des cours",
+        message: error.message || 'Erreur lors de la récupération des cours',
+      });
+    }
+  }
+
+  @Get('search')
+  async searchCourses(@Query('q') q: string, @Res() response: Response) {
+    try {
+      const cours = await this.coursService.searchCourses(q || '');
+      return response.status(HttpStatus.OK).json({
+        message: 'Résultats de recherche récupérés avec succès',
+        cours,
+      });
+    } catch (err) {
+      const error = err as Error;
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: error.message || 'Erreur lors de la recherche',
       });
     }
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number, @Res() response: Response) {
+  async findOne(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {
       const cour = await this.coursService.findOne(id);
       return response.status(HttpStatus.OK).json({
-        message: "Cours récupéré avec succès",
-        cour
+        message: 'Cours récupéré avec succès',
+        cour,
       });
     } catch (err) {
       const error = err as Error;
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
-        message: error.message || "Erreur lors de la récupération du cours",
+        message: error.message || 'Erreur lors de la récupération du cours',
       });
     }
   }
 
   @Patch(':id')
-  async update(@Param('id') id: number, @Body() updateCourDto: UpdateCourDto, @Res() response: Response) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCourDto: UpdateCourDto,
+    @Res() response: Response,
+  ) {
     try {
       const cour = await this.coursService.update(id, updateCourDto);
       return response.status(HttpStatus.OK).json({
-        message: "Cours modifié avec succès",
-        cour
+        message: 'Cours modifié avec succès',
+        cour,
       });
     } catch (err) {
       const error = err as Error;
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
-        message: error.message || "Erreur lors de la modification du cours",
+        message: error.message || 'Erreur lors de la modification du cours',
+      });
+    }
+  }
+
+  @Patch(':id/approve')
+  async approveCourse(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
+    try {
+      const cour = await this.coursService.update(id, { status: 'published' });
+      return response.status(HttpStatus.OK).json({
+        message: 'Cours publié avec succès',
+        cour,
+      });
+    } catch (err) {
+      const error = err as Error;
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: error.message || 'Erreur lors de la publication',
       });
     }
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Res() response: Response) {
+  async remove(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {
-      const cour = await this.coursService.remove(id);
+      await this.coursService.remove(id);
       return response.status(HttpStatus.OK).json({
-        message: "Cours supprimé avec succès",
-        cour
+        message: 'Cours supprimé avec succès',
       });
     } catch (err) {
       const error = err as Error;
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
-        message: error.message || "Erreur lors de la suppression du cours",
+        message: error.message || 'Erreur lors de la suppression du cours',
       });
     }
   }
 
-  // 📤 UPLOAD PDF
   @Post(':id/upload-pdf')
-  @UseInterceptors(FileInterceptor('pdf', {
-    storage: diskStorage({
-      destination: (req, file, callback) => {
-        const uploadDir = join(process.cwd(), 'uploads', 'pdfs');
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-          console.log(`📁 Dossier créé: ${uploadDir}`);
+  @UseInterceptors(
+    FileInterceptor('pdf', {
+      storage: diskStorage({
+        destination: (req, file, callback) => {
+          const uploadDir = join(process.cwd(), 'uploads', 'pdfs');
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          callback(null, uploadDir);
+        },
+        filename: (req, file, callback) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          callback(null, `pdf-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, callback) => {
+        if (!file.originalname.match(/\.(pdf)$/i)) {
+          return callback(new BadRequestException('Seuls les fichiers PDF sont autorisés'), false);
         }
-        callback(null, uploadDir);
+        callback(null, true);
       },
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
-        const filename = `pdf-${uniqueSuffix}${ext}`;
-        callback(null, filename);
-      }
+      limits: { fileSize: 10 * 1024 * 1024 },
     }),
-    fileFilter: (req, file, callback) => {
-      if (!file.originalname.match(/\.(pdf)$/i)) {
-        return callback(new BadRequestException('Seuls les fichiers PDF sont autorisés'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 10 * 1024 * 1024 // 10MB
-    }
-  }))
+  )
   async uploadPdf(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
-    @Res() response: Response
+    @Res() response: Response,
   ) {
     try {
       if (!file) {
-        return response.status(HttpStatus.BAD_REQUEST).json({
-          message: 'Aucun fichier uploadé'
-        });
+        return response.status(HttpStatus.BAD_REQUEST).json({ message: 'Aucun fichier uploadé' });
       }
 
-      console.log(`📄 Fichier reçu: ${file.originalname}`);
-      console.log(`💾 Sauvegardé dans: ${file.path}`);
-      
       const cour = await this.coursService.uploadPdf(id, file);
-      
       return response.status(HttpStatus.OK).json({
         message: 'PDF uploadé avec succès',
         cour,
-        file: {
-          originalName: file.originalname,
-          size: file.size,
-          path: file.path
-        }
       });
     } catch (err) {
       const error = err as Error;
-      console.error(`❌ Erreur upload: ${error.message}`);
-      return response.status(HttpStatus.BAD_REQUEST).json({
-        message: error.message || 'Erreur lors de l\'upload du PDF'
-      });
+      return response.status(HttpStatus.BAD_REQUEST).json({ message: error.message });
     }
   }
 
-  // 📥 DOWNLOAD PDF
   @Get(':id/download-pdf')
-  async downloadPdf(@Param('id') id: number, @Res() response: Response) {
+  async downloadPdf(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {
       const { pdfBuffer, filename } = await this.coursService.downloadPdf(id);
-      
       response.setHeader('Content-Type', 'application/pdf');
-      response.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-      response.setHeader('Content-Length', pdfBuffer.length);
-      
+      response.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
       return response.send(pdfBuffer);
     } catch (err) {
       const error = err as Error;
-      return response.status(HttpStatus.NOT_FOUND).json({
-        message: error.message || 'PDF non trouvé'
-      });
+      return response.status(HttpStatus.NOT_FOUND).json({ message: error.message });
     }
   }
 
-  // 🗑️ DELETE PDF
   @Delete(':id/pdf')
-  async deletePdf(@Param('id') id: number, @Res() response: Response) {
+  async deletePdf(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {
       await this.coursService.deletePdf(id);
-      return response.status(HttpStatus.OK).json({
-        message: 'PDF supprimé avec succès'
-      });
+      return response.status(HttpStatus.OK).json({ message: 'PDF supprimé' });
     } catch (err) {
       const error = err as Error;
-      return response.status(HttpStatus.BAD_REQUEST).json({
-        message: error.message || 'Erreur lors de la suppression du PDF'
-      });
+      return response.status(HttpStatus.BAD_REQUEST).json({ message: error.message });
     }
   }
 
-  // ℹ️ GET PDF INFO
   @Get(':id/pdf-info')
-  async getPdfInfo(@Param('id') id: number, @Res() response: Response) {
+  async getPdfInfo(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {
       const pdfInfo = await this.coursService.getPdfInfo(id);
-      return response.status(HttpStatus.OK).json({
-        message: 'Informations PDF récupérées',
-        pdfInfo
-      });
+      return response.status(HttpStatus.OK).json({ pdfInfo });
     } catch (err) {
       const error = err as Error;
-      return response.status(HttpStatus.NOT_FOUND).json({
-        message: error.message || 'PDF non trouvé'
-      });
+      return response.status(HttpStatus.NOT_FOUND).json({ message: error.message });
     }
   }
 }

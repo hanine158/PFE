@@ -1,29 +1,52 @@
-// src/cours/entities/cour.entity.ts
 import { Pdfdoc } from "../../pdfdoc/entities/pdfdoc.entity";
 import { User } from "../../user/entities/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 
 @Entity("cours")
 export class Cour {
-    @PrimaryGeneratedColumn()
-    id!: number;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-    @Column()
-    titre!: string;
+  @Column()
+  titre!: string;
 
-    @ManyToOne(() => User, (user) => user.cours, {
-        onDelete: "CASCADE",
-    })
-    @JoinColumn({ name: "userId" })
-    user!: User;
+  @Column({ type: 'text', nullable: true })
+  description?: string;
 
-    @OneToOne(() => Pdfdoc, (pdfdoc) => pdfdoc.cours, { nullable: true })
-    @JoinColumn()
-    pdf!: Pdfdoc;
+  @Column({ nullable: true })
+  category?: string;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  price!: number;
 
-    @UpdateDateColumn()
-    updatedAt!: Date;
+  @Column({ default: 'pending' })
+  status!: string;
+
+  @ManyToOne(() => User, (user) => user.cours, {
+    onDelete: "CASCADE",
+    nullable: false,
+  })
+  @JoinColumn({ name: "userId" })
+  user!: User;
+
+  @OneToOne(() => Pdfdoc, (pdfdoc) => pdfdoc.cours, {
+    nullable: true,
+    cascade: false,
+  })
+  pdf?: Pdfdoc | null;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

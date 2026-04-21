@@ -1,57 +1,125 @@
-import { Body, Controller, Get, Param, Post, Put, Delete, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Logger,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdatePasswordDto } from './dto/updatePassword.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller('user') // Changed from 'users' to 'user'
+@Controller('user')
 export class UserController {
+  private readonly logger = new Logger(UserController.name);
+
   constructor(private readonly userService: UserService) {}
 
-  // Créer un nouvel utilisateur
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  async getProfile(@Request() req: any) {
+    this.logger.log(`Requête profile pour userId: ${req.user.id}`);
+    const user = await this.userService.findOne(req.user.id);
+    const { password, refreshToken, ...result } = user;
+    return { user: result };
+  }
+
   @Post()
-  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return await this.userService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    const user = await this.userService.create(createUserDto);
+    const { password, refreshToken, ...result } = user;
+    return { user: result };
   }
 
-  // Récupérer tous les utilisateurs
+  @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(): Promise<User[]> {
-    return await this.userService.findAll();
+  async findAll() {
+    const users = await this.userService.findAll();
+    return {
+      users: users.map(({ password, refreshToken, ...u }) => u),
+    };
   }
 
-  // Récupérer un utilisateur par ID
+  @UseGuards(JwtAuthGuard)
+  @Get('students')
+  async getStudents() {
+    const students = await this.userService.findStudents();
+    return { students };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('teachers')
+  async getTeachers() {
+    const teachers = await this.userService.findTeachers();
+    return { teachers };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async findOne(@Param('id') id: number): Promise<User> {
-    return await this.userService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.userService.findOne(id);
+    const { password, refreshToken, ...result } = user;
+    return { user: result };
   }
 
-  // Mettre à jour un utilisateur
-  @Put(':id')
-  async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<User> {
-    return await this.userService.update(id, updateUserDto);
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const user = await this.userService.update(id, updateUserDto);
+    const { password, refreshToken, ...result } = user;
+    return { user: result };
   }
 
-  // Supprimer un utilisateur
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async remove(@Param('id') id: number): Promise<User> {
-    return await this.userService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.userService.remove(id);
+    const { password, refreshToken, ...result } = user;
+    return { deletedUser: result };
   }
 
-  // Login
-  @Post('login')
-  async login(@Body() body: { email: string; password: string }): Promise<User> {
-    const { email, password } = body;
-    if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
-    }
-    return await this.userService.validateUser(email, password);
+  @UseGuards(JwtAuthGuard)
+  @Post('add-xp')
+  async addXp(@Request() req: any, @Body('xpGain') xpGain: number) {
+    return await this.userService.addXp(req.user.id, Number(xpGain || 0));
   }
 
-  // Mettre à jour refresh token
-  @Put('refresh-token/:id')
-  async updateToken(@Param('id') id: number, @Body() body: { token: string }): Promise<User> {
-    const { token } = body;
-    return await this.userService.updateToken(id, token);
+  @UseGuards(JwtAuthGuard)
+  @Post('first-dashboard')
+  async firstDashboardAccess(@Request() req: any) {
+    await this.userService.handleFirstDashboardAccess(req.user.id);
+    return { message: 'Dashboard access handled' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile/update')
+  async updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
+    const user = await this.userService.updateProfile(req.user.id, dto);
+    return { user };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile/change-password')
+  async updatePassword(@Request() req: any, @Body() dto: UpdatePasswordDto) {
+    return await this.userService.updatePassword(req.user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile/settings')
+  async updateSettings(@Request() req: any, @Body() data: any) {
+    const user = await this.userService.updateSettings(req.user.id, data);
+    return { user };
   }
 }

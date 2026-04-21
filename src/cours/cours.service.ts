@@ -1,157 +1,234 @@
-// src/cours/cours.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCourDto } from './dto/create-cour.dto';
 import { UpdateCourDto } from './dto/update-cour.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cour } from './entities/cour.entity';
-import { Repository } from 'typeorm';
-import { User } from '../user/entities/user.entity';
+import { ILike, Repository } from 'typeorm';
+import { User, UserRole } from '../user/entities/user.entity';
 import { Pdfdoc } from '../pdfdoc/entities/pdfdoc.entity';
 import * as fs from 'fs';
-import * as path from 'path';
+
+import { AdminNotificationsService } from '../admin-notifications/admin-notifications.service';
+import {
+  NotificationPriority,
+  NotificationType,
+} from '../admin-notifications/entities/admin-notification.entity';
 
 @Injectable()
 export class CoursService {
   constructor(
-    @InjectRepository(Cour) private courRepository: Repository<Cour>,
-    @InjectRepository(User) private userRepository: Repository<User>,
-    @InjectRepository(Pdfdoc) private pdfRepository: Repository<Pdfdoc>,
+    @InjectRepository(Cour)
+    private readonly courRepository: Repository<Cour>,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(Pdfdoc)
+    private readonly pdfRepository: Repository<Pdfdoc>,
+
+    private readonly adminNotificationsService: AdminNotificationsService,
   ) {}
 
   async create(createCourDto: CreateCourDto): Promise<Cour> {
-    const user = await this.userRepository.findOne({ 
-      where: { id: createCourDto.user }, 
-      relations: ["cours"] 
+    const user = await this.userRepository.findOne({
+      where: { id: createCourDto.userId },
     });
-    
+
     if (!user) {
-      throw new NotFoundException("Utilisateur non trouvé");
+      throw new NotFoundException('Utilisateur non trouvé');
     }
-    
-    const cour = this.courRepository.create({ 
+
+    const cour = this.courRepository.create({
       titre: createCourDto.titre,
-      user 
+      description: createCourDto.description ?? '',
+      category: createCourDto.category ?? 'Général',
+      price: createCourDto.price ?? 0,
+      status: createCourDto.status ?? 'pending',
+      user,
     });
-    
-    return this.courRepository.save(cour);
+
+    const savedCour = await this.courRepository.save(cour);
+
+    await this.adminNotificationsService.create({
+      title: 'Nouveau cours publié',
+      message: `Le cours "${savedCour.titre}" a été publié par ${user.name}`,
+      type: NotificationType.COURSE,
+      priority: user.role === UserRole.TEACHER
+        ? NotificationPriority.MEDIUM
+        : NotificationPriority.LOW,
+      icon: '📚',
+      actionUrl: `/admin/courses/${savedCour.id}`,
+    });
+
+    return savedCour;
   }
 
   async findAll(): Promise<Cour[]> {
-    const cours = await this.courRepository.find({
-      relations: ['user', 'pdf']
+    return await this.courRepository.find({
+      relations: ['user', 'pdf'],
+      order: { createdAt: 'DESC' },
     });
-    return cours;
+  }
+
+  async searchCourses(query: string): Promise<Cour[]> {
+    const q = query.trim();
+
+    if (!q) {
+      return [];
+    }
+
+    return await this.courRepository.find({
+      where: [
+        { titre: ILike(`%${q}%`) },
+        { description: ILike(`%${q}%`) },
+        { category: ILike(`%${q}%`) },
+      ],
+      relations: ['user', 'pdf'],
+      order: { createdAt: 'DESC' },
+      take: 20,
+    });
   }
 
   async findOne(id: number): Promise<Cour> {
     const cour = await this.courRepository.findOne({
       where: { id },
-      relations: ['user', 'pdf']
+      relations: ['user', 'pdf'],
     });
-    
+
     if (!cour) {
-      throw new NotFoundException("Cours non trouvé");
+      throw new NotFoundException('Cours non trouvé');
     }
+
     return cour;
   }
 
   async update(id: number, updateCourDto: UpdateCourDto): Promise<Cour> {
     const cour = await this.findOne(id);
-    Object.assign(cour, updateCourDto);
-    return this.courRepository.save(cour);
+
+    if (updateCourDto.userId !== undefined) {
+      const user = await this.userRepository.findOne({
+        where: { id: updateCourDto.userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException('Utilisateur non trouvé');
+      }
+
+      cour.user = user;
+    }
+
+    if (updateCourDto.titre !== undefined) cour.titre = updateCourDto.titre;
+    if (updateCourDto.description !== undefined) cour.description = updateCourDto.description;
+    if (updateCourDto.category !== undefined) cour.category = updateCourDto.category;
+    if (updateCourDto.price !== undefined) cour.price = updateCourDto.price;
+    if (updateCourDto.status !== undefined) cour.status = updateCourDto.status;
+
+    return await this.courRepository.save(cour);
   }
 
-  async remove(id: number): Promise<Cour> {
+  async remove(id: number): Promise<void> {
     const cour = await this.findOne(id);
-    return this.courRepository.remove(cour);
+
+    if (cour.pdf) {
+      const pdfPath = cour.pdf.filePath;
+      if (fs.existsSync(pdfPath)) {
+        fs.unlinkSync(pdfPath);
+      }
+      await this.pdfRepository.remove(cour.pdf);
+    }
+
+    await this.courRepository.remove(cour);
   }
 
-  // 📤 Upload PDF
   async uploadPdf(id: number, file: Express.Multer.File): Promise<Cour> {
     const cour = await this.findOne(id);
-    
-    if (!cour) {
-      throw new NotFoundException("Cours non trouvé");
-    }
 
-    // Créer le dossier uploads/pdfs s'il n'existe pas
-    const uploadDir = path.join(process.cwd(), 'uploads', 'pdfs');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // Si un PDF existe déjà, supprimer l'ancien fichier
     if (cour.pdf) {
-      const oldPdfPath = path.join(process.cwd(), cour.pdf.filePath);
+      const oldPdfPath = cour.pdf.filePath;
       if (fs.existsSync(oldPdfPath)) {
         fs.unlinkSync(oldPdfPath);
       }
       await this.pdfRepository.remove(cour.pdf);
-      cour.pdf = null as any; // ✅ Solution temporaire
+      cour.pdf = null;
     }
 
-    // Créer le nouveau PDF
-    const pdf = new Pdfdoc();
-    pdf.filename = file.filename;
-    pdf.originalName = file.originalname;
-    pdf.filePath = file.path;
-    pdf.fileSize = file.size;
-    pdf.mimeType = file.mimetype;
-    pdf.cours = cour;
+    const pdf = this.pdfRepository.create({
+      filename: file.filename,
+      originalName: file.originalname,
+      filePath: file.path,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      status: 'available',
+      cours: cour,
+    });
 
     const savedPdf = await this.pdfRepository.save(pdf);
     cour.pdf = savedPdf;
-    
-    return this.courRepository.save(cour);
+
+    return await this.courRepository.save(cour);
   }
 
-  // 📥 Download PDF
+  async getAvailablePdfs(): Promise<any[]> {
+    const pdfs = await this.pdfRepository.find({
+      relations: ['cours', 'cours.user'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return pdfs.map((pdf) => ({
+      id: pdf.id,
+      courseId: pdf.cours?.id,
+      courseTitle: pdf.cours?.titre,
+      teacherName: pdf.cours?.user?.name,
+      fileName: pdf.originalName,
+      fileSize: pdf.fileSize,
+      uploadDate: pdf.createdAt,
+      status: pdf.status,
+    }));
+  }
+
   async downloadPdf(id: number): Promise<{ pdfBuffer: Buffer; filename: string }> {
     const cour = await this.findOne(id);
-    
-    if (!cour || !cour.pdf) {
-      throw new NotFoundException("Aucun PDF trouvé pour ce cours");
+
+    if (!cour.pdf) {
+      throw new NotFoundException('Aucun PDF trouvé pour ce cours');
     }
 
-    const pdfPath = path.join(process.cwd(), cour.pdf.filePath);
-    
+    const pdfPath = cour.pdf.filePath;
+
     if (!fs.existsSync(pdfPath)) {
       throw new NotFoundException("Le fichier PDF n'existe plus sur le serveur");
     }
 
     const pdfBuffer = fs.readFileSync(pdfPath);
+
     return {
       pdfBuffer,
-      filename: `${cour.titre}.pdf`
+      filename: cour.pdf.originalName || `${cour.titre}.pdf`,
     };
   }
 
-  // 🗑️ Delete PDF
   async deletePdf(id: number): Promise<void> {
     const cour = await this.findOne(id);
-    
-    if (!cour || !cour.pdf) {
-      throw new NotFoundException("Aucun PDF trouvé pour ce cours");
+
+    if (!cour.pdf) {
+      throw new NotFoundException('Aucun PDF trouvé pour ce cours');
     }
 
-    // Supprimer le fichier physique
-    const pdfPath = path.join(process.cwd(), cour.pdf.filePath);
+    const pdfPath = cour.pdf.filePath;
     if (fs.existsSync(pdfPath)) {
       fs.unlinkSync(pdfPath);
     }
 
-    // Supprimer l'entrée en base de données
     await this.pdfRepository.remove(cour.pdf);
-    cour.pdf = null as any; // ✅ Solution temporaire
+    cour.pdf = null;
     await this.courRepository.save(cour);
   }
 
-  // ℹ️ Get PDF Info
   async getPdfInfo(id: number) {
     const cour = await this.findOne(id);
-    
-    if (!cour || !cour.pdf) {
-      throw new NotFoundException("Aucun PDF trouvé pour ce cours");
+
+    if (!cour.pdf) {
+      throw new NotFoundException('Aucun PDF trouvé pour ce cours');
     }
 
     return {
@@ -159,7 +236,8 @@ export class CoursService {
       originalName: cour.pdf.originalName,
       filename: cour.pdf.filename,
       fileSize: cour.pdf.fileSize,
-      uploadedAt: cour.pdf.createdAt
+      status: cour.pdf.status,
+      uploadedAt: cour.pdf.createdAt,
     };
   }
 }

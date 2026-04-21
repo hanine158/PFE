@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateBadgeDto {
   @IsString()
@@ -13,6 +14,8 @@ export class CreateBadgeDto {
   @IsNotEmpty()
   description!: string;
 
+  @Type(() => Number)
   @IsNumber()
-  user!: number;
+  @IsOptional()
+  requiredXp?: number;
 }
