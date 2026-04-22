@@ -1,5 +1,5 @@
-import { Pdfdoc } from "../../pdfdoc/entities/pdfdoc.entity";
-import { User } from "../../user/entities/user.entity";
+import { Pdfdoc } from '../../pdfdoc/entities/pdfdoc.entity';
+import { User } from '../../user/entities/user.entity';
 import {
   Column,
   Entity,
@@ -9,9 +9,9 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-} from "typeorm";
+} from 'typeorm';
 
-@Entity("cours")
+@Entity('cours')
 export class Cour {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -32,10 +32,11 @@ export class Cour {
   status!: string;
 
   @ManyToOne(() => User, (user) => user.cours, {
-    onDelete: "CASCADE",
+    onDelete: 'CASCADE',
     nullable: false,
+    eager: false,
   })
-  @JoinColumn({ name: "userId" })
+  @JoinColumn({ name: 'userId' })
   user!: User;
 
   @OneToOne(() => Pdfdoc, (pdfdoc) => pdfdoc.cours, {

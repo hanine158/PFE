@@ -53,14 +53,15 @@ export class CoursService {
       title: 'Nouveau cours publié',
       message: `Le cours "${savedCour.titre}" a été publié par ${user.name}`,
       type: NotificationType.COURSE,
-      priority: user.role === UserRole.TEACHER
-        ? NotificationPriority.MEDIUM
-        : NotificationPriority.LOW,
+      priority:
+        user.role === UserRole.TEACHER
+          ? NotificationPriority.MEDIUM
+          : NotificationPriority.LOW,
       icon: '📚',
       actionUrl: `/admin/courses/${savedCour.id}`,
     });
 
-    return savedCour;
+    return await this.findOne(savedCour.id);
   }
 
   async findAll(): Promise<Cour[]> {
@@ -102,6 +103,16 @@ export class CoursService {
     return cour;
   }
 
+  async findByTeacher(teacherId: number): Promise<Cour[]> {
+    return await this.courRepository.find({
+      where: {
+        user: { id: teacherId },
+      },
+      relations: ['user', 'pdf'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async update(id: number, updateCourDto: UpdateCourDto): Promise<Cour> {
     const cour = await this.findOne(id);
 
@@ -123,7 +134,8 @@ export class CoursService {
     if (updateCourDto.price !== undefined) cour.price = updateCourDto.price;
     if (updateCourDto.status !== undefined) cour.status = updateCourDto.status;
 
-    return await this.courRepository.save(cour);
+    await this.courRepository.save(cour);
+    return await this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {
@@ -165,7 +177,8 @@ export class CoursService {
     const savedPdf = await this.pdfRepository.save(pdf);
     cour.pdf = savedPdf;
 
-    return await this.courRepository.save(cour);
+    await this.courRepository.save(cour);
+    return await this.findOne(id);
   }
 
   async getAvailablePdfs(): Promise<any[]> {
@@ -186,7 +199,9 @@ export class CoursService {
     }));
   }
 
-  async downloadPdf(id: number): Promise<{ pdfBuffer: Buffer; filename: string }> {
+  async downloadPdf(
+    id: number,
+  ): Promise<{ pdfBuffer: Buffer; filename: string }> {
     const cour = await this.findOne(id);
 
     if (!cour.pdf) {

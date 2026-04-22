@@ -81,6 +81,27 @@ export class CoursController {
     }
   }
 
+  @Get('teacher/:teacherId')
+  async findByTeacher(
+    @Param('teacherId', ParseIntPipe) teacherId: number,
+    @Res() response: Response,
+  ) {
+    try {
+      const cours = await this.coursService.findByTeacher(teacherId);
+      return response.status(HttpStatus.OK).json({
+        message: 'Cours du professeur récupérés avec succès',
+        cours,
+      });
+    } catch (err) {
+      const error = err as Error;
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message:
+          error.message || 'Erreur lors de la récupération des cours du professeur',
+      });
+    }
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {
@@ -170,7 +191,10 @@ export class CoursController {
       }),
       fileFilter: (req, file, callback) => {
         if (!file.originalname.match(/\.(pdf)$/i)) {
-          return callback(new BadRequestException('Seuls les fichiers PDF sont autorisés'), false);
+          return callback(
+            new BadRequestException('Seuls les fichiers PDF sont autorisés'),
+            false,
+          );
         }
         callback(null, true);
       },
@@ -184,7 +208,9 @@ export class CoursController {
   ) {
     try {
       if (!file) {
-        return response.status(HttpStatus.BAD_REQUEST).json({ message: 'Aucun fichier uploadé' });
+        return response.status(HttpStatus.BAD_REQUEST).json({
+          message: 'Aucun fichier uploadé',
+        });
       }
 
       const cour = await this.coursService.uploadPdf(id, file);
@@ -194,7 +220,9 @@ export class CoursController {
       });
     } catch (err) {
       const error = err as Error;
-      return response.status(HttpStatus.BAD_REQUEST).json({ message: error.message });
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: error.message,
+      });
     }
   }
 
@@ -203,7 +231,10 @@ export class CoursController {
     try {
       const { pdfBuffer, filename } = await this.coursService.downloadPdf(id);
       response.setHeader('Content-Type', 'application/pdf');
-      response.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
+      response.setHeader(
+        'Content-Disposition',
+        `inline; filename="${encodeURIComponent(filename)}"`,
+      );
       return response.send(pdfBuffer);
     } catch (err) {
       const error = err as Error;

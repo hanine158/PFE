@@ -27,6 +27,8 @@ import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { AdminSettingsModule } from './admin-settings/admin-settings.module';
 import { AdminNotificationsModule } from './admin-notifications/admin-notifications.module';
 
+import { ChatModule } from './chat/chat.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -99,6 +101,7 @@ import { AdminNotificationsModule } from './admin-notifications/admin-notificati
     AdminSettingsModule,
     AdminDashboardModule,
     AdminNotificationsModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

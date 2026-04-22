@@ -29,13 +29,13 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name!: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', unique: true })
   email!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   password!: string;
 
   @Column({
@@ -51,59 +51,59 @@ export class User extends BaseEntity {
   @Column({ type: 'int', default: 1 })
   level!: number;
 
-  @Column({ nullable: true })
-  phone?: string;
+  @Column({ type: 'varchar', nullable: true })
+  phone?: string | null;
 
   @Column({ type: 'text', nullable: true })
-  bio?: string;
+  bio?: string | null;
 
-  @Column({ default: 'fr' })
+  @Column({ type: 'varchar', default: 'fr' })
   language!: string;
 
-  @Column({ default: 'Africa/Casablanca' })
+  @Column({ type: 'varchar', default: 'Africa/Casablanca' })
   timezone!: string;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   emailNotifications!: boolean;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   pushNotifications!: boolean;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   newMessage!: boolean;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   newCourse!: boolean;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   systemUpdates!: boolean;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   weeklyDigest!: boolean;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   twoFactorAuth!: boolean;
 
-  @Column({ default: '30' })
+  @Column({ type: 'varchar', default: '30' })
   sessionTimeout!: string;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   loginAlerts!: boolean;
 
-  @Column({ default: 'public' })
+  @Column({ type: 'varchar', default: 'public' })
   profileVisibility!: string;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   showEmail!: boolean;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   showPhone!: boolean;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   showCourses!: boolean;
 
   @Column('simple-array', { nullable: true })
-  specializations?: string[];
+  specializations?: string[] | null;
 
   @OneToMany(() => UserBadge, (userBadge) => userBadge.user, {
     cascade: true,
@@ -118,13 +118,13 @@ export class User extends BaseEntity {
     nullable: true,
   })
   @JoinColumn()
-  progress!: Progress | null;
+  progress?: Progress | null;
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications!: Notification[];
 
-  @Column({ type: 'varchar', nullable: true })
-  refreshToken!: string | null;
+  @Column({ type: 'text', nullable: true })
+  refreshToken?: string | null;
 
   @CreateDateColumn()
   createdAt!: Date;
@@ -134,7 +134,7 @@ export class User extends BaseEntity {
 
   @BeforeInsert()
   @BeforeUpdate()
-  async hashPassword() {
+  async hashPassword(): Promise<void> {
     if (this.password && !this.password.startsWith('$argon2')) {
       this.password = await argon2.hash(this.password);
     }
