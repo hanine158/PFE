@@ -1,3 +1,5 @@
+// src/user/user.controller.ts
+
 import {
   Controller,
   Get,
@@ -10,6 +12,7 @@ import {
   Request,
   Logger,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -27,7 +30,6 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req: any) {
-    this.logger.log(`Requête profile pour userId: ${req.user.id}`);
     const user = await this.userService.findOne(req.user.id);
     const { password, refreshToken, ...result } = user;
     return { user: result };
@@ -60,6 +62,27 @@ export class UserController {
   @Get('teachers')
   async getTeachers() {
     const teachers = await this.userService.findTeachers();
+    return { teachers };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('search')
+  async searchUsers(@Query('q') q: string) {
+    const users = await this.userService.searchUsers(q || '');
+    return { users };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('students/search')
+  async searchStudents(@Query('q') q: string) {
+    const students = await this.userService.searchStudents(q || '');
+    return { students };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('teachers/search')
+  async searchTeachers(@Query('q') q: string) {
+    const teachers = await this.userService.searchTeachers(q || '');
     return { teachers };
   }
 
@@ -99,15 +122,15 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Post('first-dashboard')
   async firstDashboardAccess(@Request() req: any) {
-    await this.userService.handleFirstDashboardAccess(req.user.id);
-    return { message: 'Dashboard access handled' };
+    return await this.userService.handleFirstDashboardAccess(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch('profile/update')
   async updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
     const user = await this.userService.updateProfile(req.user.id, dto);
-    return { user };
+    const { password, refreshToken, ...result } = user;
+    return { user: result };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -120,6 +143,7 @@ export class UserController {
   @Patch('profile/settings')
   async updateSettings(@Request() req: any, @Body() data: any) {
     const user = await this.userService.updateSettings(req.user.id, data);
-    return { user };
+    const { password, refreshToken, ...result } = user;
+    return { user: result };
   }
 }

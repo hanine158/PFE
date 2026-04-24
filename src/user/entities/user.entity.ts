@@ -51,11 +51,11 @@ export class User extends BaseEntity {
   @Column({ type: 'int', default: 1 })
   level!: number;
 
-  @Column({ type: 'varchar', nullable: true })
-  phone?: string | null;
+  @Column({ type: 'varchar', nullable: true, default: null })
+  phone!: string | null;
 
-  @Column({ type: 'text', nullable: true })
-  bio?: string | null;
+  @Column({ type: 'text', nullable: true, default: null })
+  bio!: string | null;
 
   @Column({ type: 'varchar', default: 'fr' })
   language!: string;
@@ -102,8 +102,8 @@ export class User extends BaseEntity {
   @Column({ type: 'boolean', default: true })
   showCourses!: boolean;
 
-  @Column('simple-array', { nullable: true })
-  specializations?: string[] | null;
+  @Column('simple-array', { nullable: true, default: null })
+  specializations!: string[] | null;
 
   @OneToMany(() => UserBadge, (userBadge) => userBadge.user, {
     cascade: true,
@@ -118,13 +118,13 @@ export class User extends BaseEntity {
     nullable: true,
   })
   @JoinColumn()
-  progress?: Progress | null;
+  progress!: Progress | null;
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications!: Notification[];
 
-  @Column({ type: 'text', nullable: true })
-  refreshToken?: string | null;
+  @Column('text', { nullable: true, default: null })
+  refreshToken!: string | null;
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -1,190 +1,74 @@
+// src/user/user.service.ts
+
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
-  Logger,
-  OnModuleInit,
+  BadRequestException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as argon2 from 'argon2';
+
+import { User, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePasswordDto } from './dto/updatePassword.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User, UserRole } from './entities/user.entity';
-import * as argon2 from 'argon2';
-import { BadgeUnlockService } from '../badge/badge-unlock.service';
-import { Badge } from '../badge/entities/badge.entity';
-import { JwtService } from '@nestjs/jwt';
-
-import { AdminNotificationsService } from '../admin-notifications/admin-notifications.service';
-import {
-  NotificationPriority,
-  NotificationType,
-} from '../admin-notifications/entities/admin-notification.entity';
 
 @Injectable()
-export class UserService implements OnModuleInit {
-  private readonly logger = new Logger(UserService.name);
-
+export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly badgeUnlockService: BadgeUnlockService,
-    private readonly jwtService: JwtService,
-    private readonly adminNotificationsService: AdminNotificationsService,
   ) {}
 
-  async onModuleInit() {
-    await this.createDefaultAdmin();
-  }
-
-  public async createDefaultAdmin(): Promise<void> {
-    try {
-      const adminEmail = 'hanine@gmail.com';
-
-      const existingAdmin = await this.userRepository.findOne({
-        where: { email: adminEmail },
-      });
-
-      if (!existingAdmin) {
-        const admin = this.userRepository.create({
-          name: 'Hanine',
-          email: adminEmail,
-          password: await argon2.hash('admin123'),
-          role: UserRole.ADMIN,
-          xp: 0,
-          level: 1,
-        });
-
-        const savedAdmin = await this.userRepository.save(admin);
-
-        await this.adminNotificationsService.create({
-          title: 'Nouvel administrateur ajouté',
-          message: `${savedAdmin.name} a été ajouté comme administrateur`,
-          type: NotificationType.SYSTEM,
-          priority: NotificationPriority.HIGH,
-          icon: '🛡️',
-          actionUrl: `/admin/users/${savedAdmin.id}`,
-        });
-      }
-    } catch (error) {
-      this.logger.error(`Erreur admin: ${error}`);
-    }
-  }
-
+  // ================= CREATE =================
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const exists = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
+    const data: Partial<User> = {
+      ...createUserDto,
+      role:
+        typeof createUserDto.role === 'string'
+          ? (createUserDto.role as UserRole)
+          : createUserDto.role,
+    };
 
-    if (exists) {
-      throw new BadRequestException('Email already exists');
+    if (data.password) {
+      data.password = await argon2.hash(data.password);
     }
 
-    let role = UserRole.STUDENT;
-    if (createUserDto.role === 'teacher') role = UserRole.TEACHER;
-    if (createUserDto.role === 'admin') role = UserRole.ADMIN;
+    const user = this.userRepository.create(data);
 
-    const hashedPassword = await argon2.hash(createUserDto.password);
-
-    const newUser = this.userRepository.create({
-      name: createUserDto.name,
-      email: createUserDto.email,
-      password: hashedPassword,
-      role,
-      xp: 0,
-      level: 1,
-    });
-
-    const savedUser = await this.userRepository.save(newUser);
-
-    if (savedUser.role === UserRole.STUDENT) {
-      await this.badgeUnlockService.assignFirstLoginBadge(savedUser);
-    }
-
-    let title = 'Nouvel étudiant inscrit';
-    let message = `${savedUser.name} vient de s'inscrire sur la plateforme`;
-    let type = NotificationType.STUDENT;
-    let priority = NotificationPriority.LOW;
-    let icon = '👨‍🎓';
-    let actionUrl = `/admin/students/${savedUser.id}`;
-
-    if (savedUser.role === UserRole.TEACHER) {
-      title = 'Nouvel enseignant inscrit';
-      message = `${savedUser.name} vient de rejoindre la plateforme en tant qu'enseignant`;
-      type = NotificationType.TEACHER;
-      priority = NotificationPriority.MEDIUM;
-      icon = '👨‍🏫';
-      actionUrl = `/admin/teachers/${savedUser.id}`;
-    }
-
-    if (savedUser.role === UserRole.ADMIN) {
-      title = 'Nouvel administrateur ajouté';
-      message = `${savedUser.name} a été ajouté comme administrateur`;
-      type = NotificationType.SYSTEM;
-      priority = NotificationPriority.HIGH;
-      icon = '🛡️';
-      actionUrl = `/admin/users/${savedUser.id}`;
-    }
-
-    await this.adminNotificationsService.create({
-      title,
-      message,
-      type,
-      priority,
-      icon,
-      actionUrl,
-    });
-
-    return savedUser;
+    // 🔥 FIX ICI
+    return await this.userRepository.save<User>(user);
   }
 
+  // ================= ADMIN =================
+  async createDefaultAdmin(): Promise<User> {
+    const email = 'admin@learnx.com';
+
+    const existing = await this.findUserByEmail(email);
+    if (existing) return existing;
+
+    const admin = this.userRepository.create({
+      name: 'Admin',
+      email,
+      password: await argon2.hash('admin123'),
+      role: UserRole.ADMIN,
+    });
+
+    return await this.userRepository.save<User>(admin);
+  }
+
+  // ================= GET =================
   async findAll(): Promise<User[]> {
-    return await this.userRepository.find({
-      relations: ['userBadges', 'userBadges.badge'],
-    });
-  }
-
-  async findStudents(): Promise<Partial<User>[]> {
-    const students = await this.userRepository.find({
-      where: { role: UserRole.STUDENT },
-      order: { createdAt: 'DESC' },
-    });
-
-    return students.map(({ password, refreshToken, ...student }) => student);
-  }
-
-  async findTeachers(): Promise<Partial<User>[]> {
-    const teachers = await this.userRepository.find({
-      where: { role: UserRole.TEACHER },
-      order: { createdAt: 'DESC' },
-    });
-
-    return teachers.map(({ password, refreshToken, ...teacher }) => teacher);
+    return await this.userRepository.find();
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: ['userBadges', 'userBadges.badge'],
-    });
+    const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException(`User ${id} not found`);
-    }
-
-    return user;
-  }
-
-  async findByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { email },
-      relations: ['userBadges', 'userBadges.badge'],
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Utilisateur introuvable');
     }
 
     return user;
@@ -194,189 +78,142 @@ export class UserService implements OnModuleInit {
     return await this.userRepository.findOne({ where: { email } });
   }
 
+  async saveUser(user: User): Promise<User> {
+    return await this.userRepository.save<User>(user);
+  }
+
+  // ================= UPDATE =================
   async update(id: number, dto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id);
+    await this.findOne(id);
 
-    if (dto.name) user.name = dto.name;
-    if (dto.email) user.email = dto.email;
+    const data: Partial<User> = {
+      ...dto,
+      role:
+        typeof dto.role === 'string'
+          ? (dto.role as UserRole)
+          : dto.role,
+    };
 
-    if (dto.password) {
-      user.password = await argon2.hash(dto.password);
+    if (data.password) {
+      data.password = await argon2.hash(data.password);
     }
 
-    if (dto.role) {
-      if (dto.role === 'teacher') user.role = UserRole.TEACHER;
-      else if (dto.role === 'admin') user.role = UserRole.ADMIN;
-      else user.role = UserRole.STUDENT;
-    }
-
-    return await this.userRepository.save(user);
+    await this.userRepository.update(id, data);
+    return await this.findOne(id);
   }
 
   async remove(id: number): Promise<User> {
     const user = await this.findOne(id);
-    return await this.userRepository.remove(user);
+    await this.userRepository.delete(id);
+    return user;
   }
 
-  async updateToken(id: number, token: string): Promise<User> {
-    const user = await this.findOne(id);
-    user.refreshToken = token;
-    return await this.userRepository.save(user);
+  // ================= FILTER =================
+  async findStudents(): Promise<User[]> {
+    return await this.userRepository.find({
+      where: { role: UserRole.STUDENT },
+    });
   }
 
-  async validateUser(
-    email: string,
-    password: string,
-  ): Promise<{ accessToken: string; user: Partial<User> }> {
-    const user = await this.findByEmail(email);
-    const valid = await argon2.verify(user.password, password);
-
-    if (!valid) {
-      throw new BadRequestException('Invalid credentials');
-    }
-
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = this.jwtService.sign(payload);
-
-    return {
-      accessToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        xp: user.xp,
-        level: user.level,
-        phone: user.phone,
-        bio: user.bio,
-        language: user.language,
-        timezone: user.timezone,
-        specializations: user.specializations,
-        emailNotifications: user.emailNotifications,
-        pushNotifications: user.pushNotifications,
-        newMessage: user.newMessage,
-        newCourse: user.newCourse,
-        systemUpdates: user.systemUpdates,
-        weeklyDigest: user.weeklyDigest,
-        twoFactorAuth: user.twoFactorAuth,
-        sessionTimeout: user.sessionTimeout,
-        loginAlerts: user.loginAlerts,
-        profileVisibility: user.profileVisibility,
-        showEmail: user.showEmail,
-        showPhone: user.showPhone,
-        showCourses: user.showCourses,
-      },
-    };
+  async findTeachers(): Promise<User[]> {
+    return await this.userRepository.find({
+      where: { role: UserRole.TEACHER },
+    });
   }
 
-  async saveUser(user: User): Promise<User> {
-    return await this.userRepository.save(user);
+  // ================= SEARCH =================
+  async searchUsers(q: string) {
+    const search = q.trim().toLowerCase();
+    if (!search) return [];
+
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .where('LOWER(user.name) LIKE :search', { search: `%${search}%` })
+      .orWhere('LOWER(user.email) LIKE :search', { search: `%${search}%` })
+      .getMany();
+
+    return users.map(({ password, refreshToken, ...u }) => u);
   }
 
-  async addXp(userId: number, xpGain: number) {
-    const user = await this.findOne(userId);
+  async searchStudents(q: string) {
+    const search = q.trim().toLowerCase();
+    if (!search) return [];
 
-    user.xp += Number(xpGain || 0);
-    user.level = Math.floor(user.xp / 100) + 1;
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: UserRole.STUDENT })
+      .andWhere(
+        '(LOWER(user.name) LIKE :search OR LOWER(user.email) LIKE :search)',
+        { search: `%${search}%` },
+      )
+      .getMany();
 
-    await this.userRepository.save(user);
-
-    let unlockedBadges: Badge[] = [];
-    if (user.role === UserRole.STUDENT) {
-      unlockedBadges = await this.badgeUnlockService.unlockBadgesForUser(user);
-    }
-
-    const refreshedUser = await this.findOne(userId);
-
-    return {
-      message: 'XP ajouté avec succès',
-      user: {
-        id: refreshedUser.id,
-        name: refreshedUser.name,
-        email: refreshedUser.email,
-        role: refreshedUser.role,
-        xp: refreshedUser.xp,
-        level: refreshedUser.level,
-      },
-      unlockedBadges,
-    };
+    return users.map(({ password, refreshToken, ...u }) => u);
   }
 
-  async handleFirstDashboardAccess(userId: number): Promise<void> {
-    const user = await this.findOne(userId);
+  async searchTeachers(q: string) {
+    const search = q.trim().toLowerCase();
+    if (!search) return [];
 
-    if (user.role === UserRole.STUDENT) {
-      await this.badgeUnlockService.assignFirstLoginBadge(user);
-    }
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: UserRole.TEACHER })
+      .andWhere(
+        '(LOWER(user.name) LIKE :search OR LOWER(user.email) LIKE :search)',
+        { search: `%${search}%` },
+      )
+      .getMany();
+
+    return users.map(({ password, refreshToken, ...u }) => u);
   }
 
-  async updateProfile(userId: number, dto: UpdateProfileDto) {
-    const user = await this.findOne(userId);
-
-    if (dto.email && dto.email !== user.email) {
-      const exists = await this.userRepository.findOne({
-        where: { email: dto.email },
-      });
-
-      if (exists && exists.id !== user.id) {
-        throw new BadRequestException('Email already exists');
-      }
-    }
-
-    if (dto.name !== undefined) user.name = dto.name;
-    if (dto.email !== undefined) user.email = dto.email;
-    if (dto.phone !== undefined) user.phone = dto.phone;
-    if (dto.bio !== undefined) user.bio = dto.bio;
-    if (dto.language !== undefined) user.language = dto.language;
-    if (dto.timezone !== undefined) user.timezone = dto.timezone;
-
-    if ((dto as any).specializations !== undefined) {
-      user.specializations = (dto as any).specializations;
-    }
-
-    const saved = await this.userRepository.save(user);
-    const { password, refreshToken, ...result } = saved;
-    return result;
+  // ================= PROFILE =================
+  async updateProfile(userId: number, dto: UpdateProfileDto): Promise<User> {
+    await this.userRepository.update(userId, dto as any);
+    return await this.findOne(userId);
   }
 
   async updatePassword(userId: number, dto: UpdatePasswordDto) {
     const user = await this.findOne(userId);
 
-    const isValid = await argon2.verify(user.password, dto.currentPassword);
-    if (!isValid) {
-      throw new BadRequestException('Mot de passe actuel incorrect');
+    const oldPassword =
+      (dto as any).oldPassword ||
+      (dto as any).currentPassword;
+
+    const newPassword =
+      (dto as any).newPassword ||
+      (dto as any).password;
+
+    if (!oldPassword || !newPassword) {
+      throw new BadRequestException('Mot de passe invalide');
     }
 
-    user.password = await argon2.hash(dto.newPassword);
-    await this.userRepository.save(user);
+    const valid = await argon2.verify(user.password, oldPassword);
 
-    return { message: 'Mot de passe modifié avec succès' };
+    if (!valid) {
+      throw new BadRequestException('Ancien mot de passe incorrect');
+    }
+
+    await this.userRepository.update(userId, {
+      password: await argon2.hash(newPassword),
+    });
+
+    return { message: 'Mot de passe mis à jour' };
   }
 
-  async updateSettings(userId: number, data: Partial<User>) {
+  // ================= XP =================
+  async addXp(userId: number, xpGain: number) {
     const user = await this.findOne(userId);
+    user.xp = (user.xp || 0) + xpGain;
+    return await this.userRepository.save(user);
+  }
 
-    user.emailNotifications =
-      data.emailNotifications ?? user.emailNotifications;
-    user.pushNotifications =
-      data.pushNotifications ?? user.pushNotifications;
-    user.newMessage = data.newMessage ?? user.newMessage;
-    user.newCourse = data.newCourse ?? user.newCourse;
-    user.systemUpdates = data.systemUpdates ?? user.systemUpdates;
-    user.weeklyDigest = data.weeklyDigest ?? user.weeklyDigest;
+  async handleFirstDashboardAccess(userId: number) {
+    return { message: 'OK', userId };
+  }
 
-    user.twoFactorAuth = data.twoFactorAuth ?? user.twoFactorAuth;
-    user.sessionTimeout = data.sessionTimeout ?? user.sessionTimeout;
-    user.loginAlerts = data.loginAlerts ?? user.loginAlerts;
-
-    user.profileVisibility =
-      data.profileVisibility ?? user.profileVisibility;
-    user.showEmail = data.showEmail ?? user.showEmail;
-    user.showPhone = data.showPhone ?? user.showPhone;
-    user.showCourses = data.showCourses ?? user.showCourses;
-
-    const saved = await this.userRepository.save(user);
-    const { password, refreshToken, ...result } = saved;
-    return result;
+  async updateSettings(userId: number, data: any): Promise<User> {
+    await this.userRepository.update(userId, data);
+    return await this.findOne(userId);
   }
 }

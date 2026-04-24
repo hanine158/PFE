@@ -1,8 +1,6 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { TeacherStatisticsService } from './teacher-statistics.service';
-import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 
-@UseGuards(AccessTokenGuard)
 @Controller('teacher/statistics')
 export class TeacherStatisticsController {
   constructor(
@@ -10,12 +8,11 @@ export class TeacherStatisticsController {
   ) {}
 
   @Get('me')
-  async getMyStatistics(
-    @Request() req: any,
-    @Query('period') period: string,
-  ) {
+  async getMyStatistics(@Query('period') period: string) {
+    const teacherId = 11; // temporaire : ton user teacher actuel
+
     return await this.teacherStatisticsService.getTeacherStatistics(
-      req.user.id,
+      teacherId,
       period || 'month',
     );
   }

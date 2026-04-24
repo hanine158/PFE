@@ -25,11 +25,11 @@ import { UpdateCourDto } from './dto/update-cour.dto';
 import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 import * as fs from 'fs';
 
-@UseGuards(AccessTokenGuard)
 @Controller('cours')
 export class CoursController {
   constructor(private readonly coursService: CoursService) {}
 
+  @UseGuards(AccessTokenGuard)
   @Post()
   async create(@Body() createCourDto: CreateCourDto, @Res() response: Response) {
     try {
@@ -119,6 +119,7 @@ export class CoursController {
     }
   }
 
+  @UseGuards(AccessTokenGuard)
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -140,6 +141,7 @@ export class CoursController {
     }
   }
 
+  @UseGuards(AccessTokenGuard)
   @Patch(':id/approve')
   async approveCourse(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {
@@ -156,6 +158,7 @@ export class CoursController {
     }
   }
 
+  @UseGuards(AccessTokenGuard)
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {
@@ -172,6 +175,7 @@ export class CoursController {
     }
   }
 
+  @UseGuards(AccessTokenGuard)
   @Post(':id/upload-pdf')
   @UseInterceptors(
     FileInterceptor('pdf', {
@@ -233,7 +237,7 @@ export class CoursController {
       response.setHeader('Content-Type', 'application/pdf');
       response.setHeader(
         'Content-Disposition',
-        `inline; filename="${encodeURIComponent(filename)}"`,
+        `attachment; filename="${encodeURIComponent(filename)}"`,
       );
       return response.send(pdfBuffer);
     } catch (err) {
@@ -242,6 +246,7 @@ export class CoursController {
     }
   }
 
+  @UseGuards(AccessTokenGuard)
   @Delete(':id/pdf')
   async deletePdf(@Param('id', ParseIntPipe) id: number, @Res() response: Response) {
     try {

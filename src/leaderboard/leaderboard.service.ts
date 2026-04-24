@@ -1,86 +1,59 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from '../user/entities/user.entity';
 
-type LeaderboardFilter = 'all' | 'weekly' | 'monthly';
+import { User, UserRole } from '../user/entities/user.entity';
+import { Cour } from '../cours/entities/cour.entity';
 
 @Injectable()
 export class LeaderboardService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    @InjectRepository(Cour)
+    private readonly courRepository: Repository<Cour>,
   ) {}
 
-  async getLeaderboard(rawFilter: string) {
-    const filter: LeaderboardFilter =
-      rawFilter === 'weekly' || rawFilter === 'monthly' ? rawFilter : 'all';
-
+  async getLeaderboard(filter: string = 'all') {
     const users = await this.userRepository.find({
       where: { role: UserRole.STUDENT },
-      relations: ['userBadges', 'userBadges.badge'],
       order: { xp: 'DESC' },
     });
 
-    const students = users.map((user) => {
-      const badges = Array.isArray(user.userBadges) ? user.userBadges.length : 0;
-      const xp = Number(user.xp || 0);
+    const totalCourses = await this.courRepository.count();
 
-      // Tant que tu n'as pas encore d'historique weekly/monthly en base,
-      // on calcule une estimation stable côté backend au lieu de hardcoder dans le JSX.
-      const weeklyXP = Math.floor(xp * 0.2);
-      const monthlyXP = Math.floor(xp * 0.75);
+    const students = users.map((user, index) => {
+      const xp = Number(user.xp || 0);
 
       return {
         id: user.id,
-        name: user.name || 'Étudiant',
-        level: Number(user.level || 1),
+        rank: index + 1,
+        name: user.name,
+        email: user.email,
+        avatar: user.name ? user.name.charAt(0).toUpperCase() : 'U',
         xp,
-        avatar: this.buildAvatar(user.name),
-        trend: weeklyXP >= 100 ? 'up' : 'down',
-        badges,
-        courses: Number((user as any).coursesCompleted || 0),
-        streak: Number((user as any).streak || 0),
-        weeklyXP,
-        monthlyXP,
-        bio: user.bio || 'Étudiant LearnX',
+        level: user.level || 1,
+        badges: 0,
+        courses: 0,
+        streak: 0,
+        weeklyXP: filter === 'weekly' ? xp : 0,
+        monthlyXP: filter === 'monthly' ? xp : 0,
+        trend: 'up',
+        bio: 'Étudiant LearnX',
       };
     });
 
-    const sorted = [...students].sort((a, b) => {
-      if (filter === 'weekly') return b.weeklyXP - a.weeklyXP;
-      if (filter === 'monthly') return b.monthlyXP - a.monthlyXP;
-      return b.xp - a.xp;
-    });
-
-    const rankedStudents = sorted.map((student, index) => ({
-      ...student,
-      rank: index + 1,
-    }));
-
-    const summary = {
-      totalStudents: rankedStudents.length,
-      totalCourses: rankedStudents.reduce((sum, s) => sum + s.courses, 0),
-      totalBadges: rankedStudents.reduce((sum, s) => sum + s.badges, 0),
-      bestStreak:
-        rankedStudents.length > 0
-          ? Math.max(...rankedStudents.map((s) => s.streak))
-          : 0,
-    };
-
     return {
-      filter,
-      students: rankedStudents,
-      summary,
+      students,
+      summary: {
+        totalStudents: students.length,
+        totalCourses,
+        totalBadges: students.reduce((sum, s) => sum + Number(s.badges || 0), 0),
+        bestStreak: students.length
+          ? Math.max(...students.map((s) => Number(s.streak || 0)))
+          : 0,
+      },
     };
-  }
-
-  private buildAvatar(name?: string): string {
-    if (!name) return 'U';
-
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
-
-    return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
   }
 }

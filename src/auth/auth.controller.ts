@@ -1,21 +1,60 @@
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { AuthDto } from './dto/auth.dto';
+import { CreateAuthDto } from './dto/create-auth.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('signin')
-  async signin(@Body() data: { email: string; password: string }) {
-    const { email, password } = data;
-    if (!email || !password) {
-      throw new BadRequestException('Email et mot de passe requis');
+  @Post('signup')
+  async signup(@Body() data: CreateAuthDto) {
+    if (!data.name || data.name.trim() === '') {
+      throw new BadRequestException('Nom requis');
     }
-    // La méthode login de AuthService retourne { user, tokens }
-    const result = await this.authService.login({ email, password });
-    // Pour rester compatible avec ton frontend qui attend { accessToken, user }
+
+    if (!data.email || data.email.trim() === '') {
+      throw new BadRequestException('Email requis');
+    }
+
+    if (!data.password || data.password.trim() === '') {
+      throw new BadRequestException('Mot de passe requis');
+    }
+
+    const result = await this.authService.signup({
+      ...data,
+      name: data.name.trim(),
+      email: data.email.trim().toLowerCase(),
+      password: data.password.trim(),
+    });
+
+    return {
+      message: result.message,
+      accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken,
+      user: result.user,
+    };
+  }
+
+  @Post('signin')
+  async signin(@Body() data: AuthDto) {
+    if (!data.email || data.email.trim() === '') {
+      throw new BadRequestException('Email requis');
+    }
+
+    if (!data.password || data.password.trim() === '') {
+      throw new BadRequestException('Mot de passe requis');
+    }
+
+    const result = await this.authService.login({
+      ...data,
+      email: data.email.trim().toLowerCase(),
+      password: data.password.trim(),
+    });
+
     return {
       accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken,
       user: result.user,
     };
   }
@@ -25,17 +64,25 @@ export class AuthController {
     if (!data.email || data.email.trim() === '') {
       throw new BadRequestException('Email requis');
     }
-    return this.authService.forgotPassword(data.email);
+
+    return await this.authService.forgotPassword(
+      data.email.trim().toLowerCase(),
+    );
   }
 
   @Post('reset-password')
   async resetPassword(@Body() data: { token: string; password: string }) {
-    if (!data.password || data.password.trim() === '') {
-      throw new BadRequestException('Mot de passe requis');
-    }
     if (!data.token || data.token.trim() === '') {
       throw new BadRequestException('Token requis');
     }
-    return this.authService.resetPassword(data.token, data.password);
+
+    if (!data.password || data.password.trim() === '') {
+      throw new BadRequestException('Mot de passe requis');
+    }
+
+    return await this.authService.resetPassword(
+      data.token.trim(),
+      data.password.trim(),
+    );
   }
 }

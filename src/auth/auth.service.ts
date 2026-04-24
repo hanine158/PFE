@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -11,31 +12,92 @@ import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { MailerService } from '@nestjs-modules/mailer';
 import { AuthDto } from './dto/auth.dto';
+import { CreateAuthDto } from './dto/create-auth.dto';
+import { UserRole } from '../user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private mailerService: MailerService,
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly mailerService: MailerService,
   ) {}
+
+  // ========================= SIGNUP =========================
+  async signup(data: CreateAuthDto) {
+    const { name, email, password, role } = data;
+
+    if (!name || !email || !password) {
+      throw new BadRequestException('Champs obligatoires manquants');
+    }
+
+    const existingUser = await this.userService.findUserByEmail(email);
+    if (existingUser) {
+      throw new ConflictException('Email déjà utilisé');
+    }
+
+    let userRole = UserRole.STUDENT;
+    if (role === 'teacher') userRole = UserRole.TEACHER;
+    if (role === 'admin') userRole = UserRole.ADMIN;
+
+    const newUser = await this.userService.create({
+      name,
+      email,
+      password,
+      role: userRole,
+    });
+
+    await this.mailerService.sendMail({
+      to: newUser.email,
+      subject: 'Bienvenue sur LearnX 🎉',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>Bienvenue ${newUser.name}</h2>
+          <p>Votre compte a été créé avec succès.</p>
+          <p>Vous pouvez maintenant vous connecter à la plateforme.</p>
+          <br />
+          <p>Merci,<br />L'équipe LearnX</p>
+        </div>
+      `,
+    });
+
+    const tokens = await this.getTokens(newUser);
+    await this.updateRefreshToken(newUser.id, tokens.refreshToken);
+
+    return {
+      message: 'Inscription réussie',
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        xp: newUser.xp,
+        level: newUser.level,
+      },
+      tokens,
+    };
+  }
 
   // ========================= LOGIN =========================
   async login(data: AuthDto) {
     if (!data.email || !data.password) {
-      throw new BadRequestException('Email and password are required');
+      throw new BadRequestException('Email et mot de passe requis');
     }
 
-    const user = await this.userService.findByEmail(data.email);
+    const user = await this.userService.findUserByEmail(data.email);
 
-    const passwordValid = await argon2.verify(user.password, data.password);
-    if (!passwordValid) {
-      throw new BadRequestException('Invalid credentials');
+    if (!user) {
+      throw new BadRequestException('Email ou mot de passe incorrect');
+    }
+
+    const valid = await argon2.verify(user.password, data.password);
+
+    if (!valid) {
+      throw new BadRequestException('Email ou mot de passe incorrect');
     }
 
     const tokens = await this.getTokens(user);
-
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
     return {
@@ -51,11 +113,6 @@ export class AuthService {
     };
   }
 
-  // ========================= LOGOUT =========================
-  async logout(userId: number) {
-    await this.userService.update(userId, { refreshToken: null });
-  }
-
   // ========================= TOKENS =========================
   async getTokens(user: any) {
     const payload = {
@@ -69,7 +126,6 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
         expiresIn: '15m',
       }),
-
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         expiresIn: '7d',
@@ -79,9 +135,10 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  // ========================= HASH REFRESH TOKEN =========================
+  // ========================= UPDATE REFRESH TOKEN =========================
   async updateRefreshToken(userId: number, refreshToken: string) {
     const hashed = await argon2.hash(refreshToken);
+
     await this.userService.update(userId, {
       refreshToken: hashed,
     });
@@ -92,33 +149,42 @@ export class AuthService {
     const user = await this.userService.findOne(userId);
 
     if (!user || !user.refreshToken) {
-      throw new ForbiddenException('Access Denied');
+      throw new ForbiddenException('Access denied');
     }
 
-    const refreshValid = await argon2.verify(
-      user.refreshToken,
-      refreshToken,
-    );
+    const valid = await argon2.verify(user.refreshToken, refreshToken);
 
-    if (!refreshValid) {
-      throw new ForbiddenException('Access Denied');
+    if (!valid) {
+      throw new ForbiddenException('Access denied');
     }
 
     const tokens = await this.getTokens(user);
-
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
     return tokens;
   }
 
+  // ========================= LOGOUT =========================
+  async logout(userId: number) {
+    await this.userService.update(userId, {
+      refreshToken: null,
+    });
+
+    return {
+      message: 'Déconnexion réussie',
+    };
+  }
+
   // ========================= FORGOT PASSWORD =========================
   async forgotPassword(email: string) {
-    if (!email) throw new BadRequestException('Email is required');
+    if (!email) {
+      throw new BadRequestException('Email requis');
+    }
 
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findUserByEmail(email);
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Utilisateur introuvable');
     }
 
     const token = this.jwtService.sign(
@@ -129,50 +195,79 @@ export class AuthService {
       },
     );
 
-    await this.userService.updateToken(user.id, token);
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+
+    const resetLink = `${frontendUrl}/reset-password?token=${token}`;
 
     await this.mailerService.sendMail({
       to: user.email,
-      subject: 'Password reset',
+      subject: 'Réinitialisation du mot de passe',
       html: `
-        <h3>Password Reset</h3>
-        <p>Click below to reset your password</p>
-        <a href="http://localhost:3001/auth/reset/${token}">
-          Reset Password
-        </a>
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h3>Réinitialisation du mot de passe</h3>
+          <p>Cliquez sur le bouton ci-dessous pour changer votre mot de passe :</p>
+
+          <a
+            href="${resetLink}"
+            style="
+              display: inline-block;
+              padding: 12px 20px;
+              background: #667eea;
+              color: white;
+              text-decoration: none;
+              border-radius: 8px;
+              font-weight: bold;
+            "
+          >
+            Réinitialiser le mot de passe
+          </a>
+
+          <p style="margin-top: 20px;">
+            Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
+          </p>
+          <p>${resetLink}</p>
+
+          <p style="margin-top: 20px;">Ce lien expire dans 10 minutes.</p>
+        </div>
       `,
     });
 
     return {
-      success: true,
-      message: 'Reset email sent',
+      message: 'Email de réinitialisation envoyé',
     };
   }
 
   // ========================= RESET PASSWORD =========================
-  async resetPassword(token: string, password: string) {
-    if (!token || !password) {
-      throw new BadRequestException('Token and password required');
-    }
-
-    try {
-      const decoded = this.jwtService.verify(token, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-      });
-
-      const user = await this.userService.findOne(decoded.id);
-
-      user.password = await argon2.hash(password);
-      user.refreshToken = null;
-
-      await this.userService.saveUser(user);
-
-      return {
-        success: true,
-        message: 'Password updated successfully',
-      };
-    } catch (error) {
-      throw new UnauthorizedException('Invalid or expired token');
-    }
+async resetPassword(token: string, password: string) {
+  if (!token || !password) {
+    throw new BadRequestException('Token et mot de passe requis');
   }
+
+  try {
+    const decoded = await this.jwtService.verifyAsync(token, {
+      secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+    });
+
+    const user = await this.userService.findOne(decoded.id);
+
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    const hashedPassword = await argon2.hash(password);
+
+    user.password = hashedPassword;
+    user.refreshToken = null;
+
+    await this.userService.saveUser(user);
+
+    return {
+      message: 'Mot de passe modifié avec succès',
+    };
+  } catch (error) {
+    console.error('Erreur resetPassword:', error);
+    throw new UnauthorizedException('Token invalide ou expiré');
+  }
+}
 }

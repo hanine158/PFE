@@ -1,4 +1,11 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, IsIn } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+  IsIn,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -16,9 +23,5 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsIn(['student', 'teacher', 'admin'])
-  role?: string = 'student';
-
-  @IsOptional()
-  @IsString()
-  refreshToken?: string | null;
+  role?: string;
 }

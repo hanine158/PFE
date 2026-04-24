@@ -1,28 +1,21 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
-
-import { User } from './entities/user.entity';
-import { Badge } from '../badge/entities/badge.entity';
-import { UserBadge } from './entities/user-badge.entity';
-
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-import { BadgeUnlockService } from '../badge/badge-unlock.service';
+import { User } from './entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
+import { BadgeModule } from '../badge/badge.module';
 import { AdminNotificationsModule } from '../admin-notifications/admin-notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Badge, UserBadge]),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secretKey',
-    }),
-    AuthModule,
+    TypeOrmModule.forFeature([User]),
+    forwardRef(() => AuthModule),
+    BadgeModule,
     AdminNotificationsModule,
   ],
-  providers: [UserService, BadgeUnlockService],
   controllers: [UserController],
-  exports: [UserService],
+  providers: [UserService],
+  exports: [UserService, TypeOrmModule],
 })
 export class UserModule {}

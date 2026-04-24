@@ -43,6 +43,19 @@ export class NotificationController {
     return { notification };
   }
 
+  @Post('user/:userId')
+  async createForUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() dto: CreateNotificationDto,
+  ) {
+    const notification = await this.notificationService.createForUser(
+      userId,
+      dto,
+    );
+
+    return { notification };
+  }
+
   @Patch('read-all')
   async markAllAsRead(@Request() req: any) {
     return await this.notificationService.markAllAsRead(req.user.id);

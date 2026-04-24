@@ -1,17 +1,26 @@
-// create-auth.dto.ts
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateAuthDto {
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @IsOptional()
   @IsString()
-  role?: string; // optionnel pour inscription
+  role?: string;
 }

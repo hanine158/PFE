@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -81,14 +80,10 @@ export class NotificationService {
   async getStats(userId: number) {
     const notifications = await this.findAllForUser(userId);
 
-    const total = notifications.length;
-    const unread = notifications.filter((n) => !n.read).length;
-    const read = notifications.filter((n) => n.read).length;
-
     return {
-      total,
-      unread,
-      read,
+      total: notifications.length,
+      unread: notifications.filter((n) => !n.read).length,
+      read: notifications.filter((n) => n.read).length,
     };
   }
 }

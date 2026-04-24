@@ -1,18 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { NotificationService } from '../notification/notification.service';
+
+// 🔥 IMPORT ENUMS (IMPORTANT)
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../notification/entities/notification.entity';
 
 @Injectable()
 export class ChatService {
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
+
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,
+
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createOrGetConversation(
@@ -25,9 +36,7 @@ export class ChatService {
       },
     });
 
-    if (existingConversation) {
-      return existingConversation;
-    }
+    if (existingConversation) return existingConversation;
 
     const conversation = this.conversationRepository.create({
       studentId: dto.studentId,
@@ -47,15 +56,8 @@ export class ChatService {
     userId: number,
     role: 'student' | 'teacher',
   ): Promise<Conversation[]> {
-    if (role === 'student') {
-      return await this.conversationRepository.find({
-        where: { studentId: userId },
-        order: { updatedAt: 'DESC' },
-      });
-    }
-
     return await this.conversationRepository.find({
-      where: { teacherId: userId },
+      where: role === 'student' ? { studentId: userId } : { teacherId: userId },
       order: { updatedAt: 'DESC' },
     });
   }
@@ -94,16 +96,40 @@ export class ChatService {
 
     const savedMessage = await this.messageRepository.save(message);
 
+    // 🔥 Mise à jour conversation
     conversation.lastMessage = dto.text;
     conversation.lastMessageTime = new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
     });
 
+    // 🔥 NOTIFICATIONS AVEC ENUMS
     if (dto.senderRole === 'student') {
       conversation.unreadTeacher += 1;
+
+      await this.notificationService.createForUser(
+        conversation.teacherId,
+        {
+          title: 'Nouveau message',
+          message: `${conversation.studentName} vous a envoyé un message`,
+          icon: '💬',
+          type: NotificationType.MESSAGE,
+          priority: NotificationPriority.MEDIUM,
+        },
+      );
     } else {
       conversation.unreadStudent += 1;
+
+      await this.notificationService.createForUser(
+        conversation.studentId,
+        {
+          title: 'Nouveau message',
+          message: `${conversation.teacherName} vous a envoyé un message`,
+          icon: '💬',
+          type: NotificationType.MESSAGE,
+          priority: NotificationPriority.MEDIUM,
+        },
+      );
     }
 
     await this.conversationRepository.save(conversation);

@@ -21,12 +21,10 @@ import { StatisticsModule } from './statistics/statistics.module';
 import { TeacherStatisticsModule } from './teacher-statistics/teacher-statistics.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { TeacherNotificationsModule } from './teacher-notifications/teacher-notifications.module';
-
 import { AdminStatisticsModule } from './admin-statistics/admin-statistics.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { AdminSettingsModule } from './admin-settings/admin-settings.module';
 import { AdminNotificationsModule } from './admin-notifications/admin-notifications.module';
-
 import { ChatModule } from './chat/chat.module';
 
 @Module({
@@ -37,34 +35,35 @@ import { ChatModule } from './chat/chat.module';
     }),
 
     TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get<string>('DB_HOST', 'localhost'),
-        port: Number(configService.get<number>('DB_PORT', 5432)),
+        port: Number(configService.get<string>('DB_PORT') || 5432),
         username: configService.get<string>('DB_USERNAME', 'postgres'),
         password: configService.get<string>('DB_PASSWORD', 'hanine'),
         database: configService.get<string>('DB_NAME', 'db1'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        autoLoadEntities: true,
         synchronize: true,
         logging: true,
       }),
-      inject: [ConfigService],
     }),
 
     JwtModule.registerAsync({
       global: true,
+      inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_ACCESS_SECRET', 'secretKey'),
         signOptions: { expiresIn: '7d' },
       }),
-      inject: [ConfigService],
     }),
 
     MailerModule.forRootAsync({
+      inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         transport: {
           host: configService.get<string>('MAIL_HOST', 'smtp.gmail.com'),
-          port: Number(configService.get<number>('MAIL_PORT', 587)),
+          port: Number(configService.get<string>('MAIL_PORT') || 587),
           secure: false,
           auth: {
             user: configService.get<string>('MAIL_USER'),
@@ -78,7 +77,6 @@ import { ChatModule } from './chat/chat.module';
           ),
         },
       }),
-      inject: [ConfigService],
     }),
 
     UserModule,
@@ -96,7 +94,6 @@ import { ChatModule } from './chat/chat.module';
     TeacherStatisticsModule,
     LeaderboardModule,
     TeacherNotificationsModule,
-
     AdminStatisticsModule,
     AdminSettingsModule,
     AdminDashboardModule,
