@@ -1,47 +1,93 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateSchemaDto } from './dto/create-schema.dto';
-import { UpdateSchemaDto } from './dto/update-schema.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Schema } from './entities/schema.entity';
 import { Repository } from 'typeorm';
+
+import { Schema } from './entities/schema.entity';
+import { Cour } from '../cours/entities/cour.entity';
+import { CreateSchemaDto } from './dto/create-schema.dto';
 
 @Injectable()
 export class SchemaService {
-  constructor(  @InjectRepository(Schema) private schemaRepository: Repository<Schema>)
-  {}
-  async create(createSchemaDto: CreateSchemaDto) : Promise<Schema>{
-    const schema = this.schemaRepository.create(createSchemaDto);
-    return this.schemaRepository.save(schema);
-  }
+  constructor(
+    @InjectRepository(Schema)
+    private readonly schemaRepository: Repository<Schema>,
 
-  async findAll() : Promise<Schema[]>{
-    const schemas = await this.schemaRepository.find();
-    if(schemas.length==0){
-      throw new NotFoundException("schema data not found")
+    @InjectRepository(Cour)
+    private readonly courRepository: Repository<Cour>,
+  ) {}
+
+  async publishSchema(courseId: number, dto: CreateSchemaDto) {
+    const cour = await this.courRepository.findOne({
+      where: { id: courseId },
+    });
+
+    if (!cour) {
+      throw new NotFoundException('Cours introuvable');
     }
 
-    return schemas;
+    const schema = this.schemaRepository.create({
+      titre: dto.titre,
+      contenu: dto.contenu,
+      imageUrl: dto.imageUrl || null,
+      cour,
+    });
+
+    const saved = await this.schemaRepository.save(schema);
+
+    return {
+      success: true,
+      message: 'Schéma publié avec succès',
+      schema: saved,
+    };
   }
 
-   async findOne(id: number) : Promise<Schema> {
-    const schema = await this.schemaRepository.findOneBy({id});
-    if(!schema){
-      throw new NotFoundException("schema not found");
+  async findAllByCourse(courseId: number) {
+    return this.schemaRepository.find({
+      where: {
+        cour: {
+          id: courseId,
+        },
+      },
+      relations: ['cour'],
+      order: {
+        id: 'DESC',
+      },
+    });
+  }
+
+  async findLatestByCourse(courseId: number) {
+    const schema = await this.schemaRepository.findOne({
+      where: {
+        cour: {
+          id: courseId,
+        },
+      },
+      relations: ['cour'],
+      order: {
+        id: 'DESC',
+      },
+    });
+
+    return {
+      success: !!schema,
+      schema,
+    };
+  }
+
+  async remove(id: number) {
+    const schema = await this.schemaRepository.findOne({
+      where: { id },
+    });
+
+    if (!schema) {
+      throw new NotFoundException('Schéma introuvable');
     }
-    return schema;
-  }
 
-  async update(id: number, updateSchemaDto: UpdateSchemaDto) : Promise<Schema>{
-    const schema = await this.findOne(id);
-    if(!schema){
-      throw new NotFoundException("schema not found");
-    }
-    Object.assign(schema, updateSchemaDto);
-    return this.schemaRepository.save(schema);
-  }
+    await this.schemaRepository.remove(schema);
 
-  async remove(id: number)  : Promise<Schema>{
-    const schema = await this.findOne(id);
-    return this.schemaRepository.remove(schema);
+    return {
+      success: true,
+      message: 'Schéma supprimé',
+    };
   }
 }

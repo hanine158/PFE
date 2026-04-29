@@ -1,7 +1,7 @@
-import { AnalyseRe } from "../../analyse-res/entities/analyse-re.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Cour } from '../../cours/entities/cour.entity';
 
-@Entity("schema")
+@Entity('schema')
 export class Schema {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -9,14 +9,14 @@ export class Schema {
   @Column()
   titre!: string;
 
-  @Column({ type: "text" })
+  @Column({ type: 'text' })
   contenu!: string;
 
-  @Column({ type: "text", nullable: true }) // 🔥 التصحيح هنا
+  @Column({ type: 'text', nullable: true })
   imageUrl!: string | null;
 
-  @ManyToOne(() => AnalyseRe, (analyse) => analyse.schemas, {
-    onDelete: "CASCADE",
+  @ManyToOne(() => Cour, {
+    onDelete: 'CASCADE',
   })
-  analyseRe!: AnalyseRe;
+  cour!: Cour;
 }

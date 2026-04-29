@@ -9,9 +9,7 @@ export class AnalyseRe {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @OneToMany(() => Schema, (schema) => schema.analyseRe, {
-    cascade: true,
-  })
+  
   schemas!: Schema[];
 
   @OneToMany(() => Quiz, (quiz) => quiz.analyseRe, {

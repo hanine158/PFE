@@ -268,4 +268,5 @@ export class CoursController {
       return response.status(HttpStatus.NOT_FOUND).json({ message: error.message });
     }
   }
+  
 }

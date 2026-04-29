@@ -26,6 +26,7 @@ import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { AdminSettingsModule } from './admin-settings/admin-settings.module';
 import { AdminNotificationsModule } from './admin-notifications/admin-notifications.module';
 import { ChatModule } from './chat/chat.module';
+import { AiQuizModule } from './ai-quiz/ai-quiz.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { ChatModule } from './chat/chat.module';
     AdminDashboardModule,
     AdminNotificationsModule,
     ChatModule,
+    AiQuizModule,
   ],
   controllers: [AppController],
   providers: [AppService],
